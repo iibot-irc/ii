@@ -32,7 +32,10 @@ program and for example with vim. Run vim in the server directory and use
 key mapping like:
 map w1 :.w >> \#ii/in<cr>
 map w2 :.w >> \#wmii/in<cr>
-to post to channels. Thanks to Matthias Kopfermann for this hint.
+to post to channels. 
+If you use the next editor line for a new posting you can use ctrl-p for nick
+completion if you wrote the nick in the past.
+Thanks to Matthias Kopfermann for this hint.
 
 Configuration
 -------------
@@ -43,4 +46,4 @@ Contact
 If you want to contact the developers just write a mail to
 ii (at) modprobe (dot) de
 
---Nico Golde, Anselm R. Garbe
+-- Nico Golde, Anselm R. Garbe

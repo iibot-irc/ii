@@ -27,7 +27,7 @@
 enum { TOK_NICKSRV = 0, TOK_USER, TOK_CMD, TOK_CHAN, TOK_ARG, TOK_TEXT, TOK_LAST };
 
 static int irc;
-static char *fifo[256];
+static char *fifo[_POSIX_PATH_MAX];
 static char *server = "irc.freenode.net";
 static char nick[32];			/* might change while running */
 static char path[_POSIX_PATH_MAX];
@@ -107,7 +107,7 @@ static size_t tokenize(char **result, size_t reslen, char *str, char delim)
 }
 
 /* creates directories top-down, if necessary */
-static void _mkdir(const char *dir)
+static void create_lastdir(const char *dir)
 {
 	char tmp[256];
 	char *p;
@@ -120,21 +120,19 @@ static void _mkdir(const char *dir)
 	for(p = tmp + 1; *p; p++)
 		if(*p == '/') {
 			*p = 0;
-			if(access(tmp, F_OK))
-				mkdir(tmp, S_IRWXU);
+			mkdir(tmp, S_IRWXU);
 			*p = '/';
 		}
-	if(access(tmp, F_OK))
-		mkdir(tmp, S_IRWXU);
+	mkdir(tmp, S_IRWXU);
 }
 
-static int _create_filepath(char *filepath, size_t len, char *channel,
+static int get_filepath(char *filepath, size_t len, char *channel,
 							char *file)
 {
 	if(channel) {
 		if(!snprintf(filepath, len, "%s/%s", path, channel))
 			return 0;
-		_mkdir(filepath);
+		create_lastdir(filepath);
 		return snprintf(filepath, len, "%s/%s/%s", path, channel, file);
 	}
 	return snprintf(filepath, len, "%s/%s", path, file);
@@ -143,7 +141,7 @@ static int _create_filepath(char *filepath, size_t len, char *channel,
 static void create_filepath(char *filepath, size_t len, char *channel,
 							char *suffix)
 {
-	if(!_create_filepath(filepath, len, channel, suffix)) {
+	if(!get_filepath(filepath, len, channel, suffix)) {
 		fprintf(stderr, "%s", "ii: path to irc directory too long\n");
 		exit(EXIT_FAILURE);
 	}
@@ -470,7 +468,7 @@ int main(int argc, char *argv[])
 		fprintf(stderr, "%s", "ii: path to irc directory too long\n");
 		exit(EXIT_FAILURE);
 	}
-	_mkdir(path);
+	create_lastdir(path);
 
 	for(i = 0; i < 256; i++)
 		fifo[i] = 0;
