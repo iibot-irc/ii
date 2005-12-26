@@ -193,7 +193,10 @@ static void proc_fifo_input(int fd, char *buffer)
 	case 'a':
 		snprintf(buf, PIPE_BUF, "-!- %s is away \"%s\"", nick, &buffer[3]);
 		print_out(fifo[fd], buf);
-		snprintf(buf, PIPE_BUF, "AWAY :%s\r\n", &buffer[3]);
+		if(&buffer[3] == nil)
+			snprintf(buf, PIPE_BUF, "AWAY\r\n");
+		else
+			snprintf(buf, PIPE_BUF, "AWAY :%s\r\n", &buffer[3]);
 		break;
 	case 'm':
 		p = strchr(&buffer[3], ' ');
