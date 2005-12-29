@@ -70,8 +70,7 @@ static void create_dirtree(const char *dir)
 	mkdir(tmp, S_IRWXU);
 }
 
-static int get_filepath(char *filepath, size_t len, char *channel,
-							char *file)
+static int get_filepath(char *filepath, size_t len, char *channel, char *file)
 {
 	if(channel) {
 		if(!snprintf(filepath, len, "%s/%s", path, channel))
@@ -82,8 +81,7 @@ static int get_filepath(char *filepath, size_t len, char *channel,
 	return snprintf(filepath, len, "%s/%s", path, file);
 }
 
-static void create_filepath(char *filepath, size_t len, char *channel,
-							char *suffix)
+static void create_filepath(char *filepath, size_t len, char *channel, char *suffix)
 {
 	if(!get_filepath(filepath, len, channel, suffix)) {
 		fprintf(stderr, "%s", "ii: path to irc directory too long\n");
@@ -102,6 +100,8 @@ static int open_channel(char *name)
 {
 	static char infile[256];
 	create_filepath(infile, sizeof(infile), name, "in");
+	if(access(infile, F_OK) == -1)
+		mkfifo(infile, S_IRWXU);
 	return open(infile, O_RDONLY | O_NONBLOCK, 0);
 }
 
@@ -110,7 +110,7 @@ static void add_channel(char *name)
 	Channel *c;
 	int fd = open_channel(name);
 
-	if(fd < 0) {
+	if(fd == -1) {
 		perror("ii: cannot create in channels");
 		return;
 	}
