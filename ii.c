@@ -26,43 +26,140 @@
 
 enum { TOK_NICKSRV = 0, TOK_USER, TOK_CMD, TOK_CHAN, TOK_ARG, TOK_TEXT, TOK_LAST };
 
+typedef struct Channel Channel;
+struct Channel {
+	int fd;
+	char *name;
+	Channel *next;
+};
+
 static int irc;
-static char *fifo[_POSIX_PATH_MAX];
-static char *server = "irc.freenode.net";
+static Channel *channels = nil;
+static char *host = "irc.freenode.net";
 static char nick[32];			/* might change while running */
 static char path[_POSIX_PATH_MAX];
-static char buf[PIPE_BUF]; /* buffers used for communication */
-static char _buf[PIPE_BUF]; /* help buffer */
-
-static int add_channel(char *channel);
+static char message[PIPE_BUF]; /* message buf used for communication */
 
 static void usage()
 {
 	fprintf(stderr, "%s",
 			"ii - irc it - " VERSION "\n"
 			"  (C)opyright MMV Anselm R. Garbe, Nico Golde\n"
-			"usage: ii [-i <irc dir>] [-s <server>] [-p <port>]\n"
+			"usage: ii [-i <irc dir>] [-s <host>] [-p <port>]\n"
 			"          [-n <nick>] [-k <password>] [-f <fullname>]\n");
 	exit(EXIT_SUCCESS);
+}
+
+/* creates directories top-down, if necessary */
+static void create_dirtree(const char *dir)
+{
+	char tmp[256];
+	char *p;
+	size_t len;
+
+	snprintf(tmp, sizeof(tmp),"%s",dir);
+	len = strlen(tmp);
+	if(tmp[len - 1] == '/')
+		tmp[len - 1] = 0;
+	for(p = tmp + 1; *p; p++)
+		if(*p == '/') {
+			*p = 0;
+			mkdir(tmp, S_IRWXU);
+			*p = '/';
+		}
+	mkdir(tmp, S_IRWXU);
+}
+
+static int get_filepath(char *filepath, size_t len, char *channel,
+							char *file)
+{
+	if(channel) {
+		if(!snprintf(filepath, len, "%s/%s", path, channel))
+			return 0;
+		create_dirtree(filepath);
+		return snprintf(filepath, len, "%s/%s/%s", path, channel, file);
+	}
+	return snprintf(filepath, len, "%s/%s", path, file);
+}
+
+static void create_filepath(char *filepath, size_t len, char *channel,
+							char *suffix)
+{
+	if(!get_filepath(filepath, len, channel, suffix)) {
+		fprintf(stderr, "%s", "ii: path to irc directory too long\n");
+		exit(EXIT_FAILURE);
+	}
+}
+
+static Channel *get_channel(int fd)
+{
+	Channel *c;
+	for (c = channels; c && c->fd != fd; c = c->next);
+	return c;
+}
+
+static int open_channel(char *name)
+{
+	static char infile[256];
+	create_filepath(infile, sizeof(infile), name, "in");
+	return open(infile, O_RDONLY | O_NONBLOCK, 0);
+}
+
+static void add_channel(char *name)
+{
+	Channel *c;
+	int fd = open_channel(name);
+
+	if(fd < 0) {
+		perror("ii: cannot create in channels");
+		return;
+	}
+	if(!channels)
+		channels = c = calloc(1, sizeof(Channel));
+	else {
+		for(c = channels; c && c->next; c = c->next);
+		c->next = calloc(1, sizeof(Channel));
+		c = c->next;
+	}
+	if(!c) {
+		perror("ii: cannot allocate memory");
+		exit(EXIT_FAILURE);
+	}
+	c->fd = fd;
+	c->name = strdup(name);
+}
+
+static void rm_channel(Channel *c)
+{
+	Channel *p;
+	if(channels == c)
+		channels = channels->next;
+	else {
+		for(p = channels; p && p->next != c; p = p->next);
+		if(p->next == c)
+			p->next = c->next;
+	}
+	free(c->name);
+	free(c);
 }
 
 static void login(char *key, char *fullname)
 {
 	if(key)
-		snprintf(buf, PIPE_BUF,
+		snprintf(message, PIPE_BUF,
 				 "PASS %s\r\nNICK %s\r\nUSER %s localhost %s :%s\r\n", key,
-				 nick, nick, server, fullname ? fullname : nick);
+				 nick, nick, host, fullname ? fullname : nick);
 	else
-		snprintf(buf, PIPE_BUF, "NICK %s\r\nUSER %s localhost %s :%s\r\n",
-				 nick, nick, server, fullname ? fullname : nick);
-	write(irc, buf, strlen(buf));	/* login */
+		snprintf(message, PIPE_BUF, "NICK %s\r\nUSER %s localhost %s :%s\r\n",
+				 nick, nick, host, fullname ? fullname : nick);
+	write(irc, message, strlen(message));	/* login */
 }
 
 static int tcpopen(unsigned short port)
 {
 	int fd;
 	struct sockaddr_in sin;
-	struct hostent *hp = gethostbyname(server);
+	struct hostent *hp = gethostbyname(host);
 
 	memset(&sin, 0, sizeof(struct sockaddr_in));
 	if(hp == nil) {
@@ -77,7 +174,7 @@ static int tcpopen(unsigned short port)
 		exit(EXIT_FAILURE);
 	}
 	if(connect(fd, (const struct sockaddr *) &sin, sizeof(sin)) < 0) {
-		perror("ii: cannot connect to server");
+		perror("ii: cannot connect to host");
 		exit(EXIT_FAILURE);
 	}
 	return fd;
@@ -106,48 +203,7 @@ static size_t tokenize(char **result, size_t reslen, char *str, char delim)
 	return i + 2;				/* number of tokens */
 }
 
-/* creates directories top-down, if necessary */
-static void create_lastdir(const char *dir)
-{
-	char tmp[256];
-	char *p;
-	size_t len;
-
-	snprintf(tmp, sizeof(tmp),"%s",dir);
-	len = strlen(tmp);
-	if(tmp[len - 1] == '/')
-		tmp[len - 1] = 0;
-	for(p = tmp + 1; *p; p++)
-		if(*p == '/') {
-			*p = 0;
-			mkdir(tmp, S_IRWXU);
-			*p = '/';
-		}
-	mkdir(tmp, S_IRWXU);
-}
-
-static int get_filepath(char *filepath, size_t len, char *channel,
-							char *file)
-{
-	if(channel) {
-		if(!snprintf(filepath, len, "%s/%s", path, channel))
-			return 0;
-		create_lastdir(filepath);
-		return snprintf(filepath, len, "%s/%s/%s", path, channel, file);
-	}
-	return snprintf(filepath, len, "%s/%s", path, file);
-}
-
-static void create_filepath(char *filepath, size_t len, char *channel,
-							char *suffix)
-{
-	if(!get_filepath(filepath, len, channel, suffix)) {
-		fprintf(stderr, "%s", "ii: path to irc directory too long\n");
-		exit(EXIT_FAILURE);
-	}
-}
-
-static void print_out(char *channel, char *buffer)
+static void print_out(char *channel, char *buf)
 {
 	static char outfile[256];
 	FILE *out;
@@ -157,89 +213,88 @@ static void print_out(char *channel, char *buffer)
 	create_filepath(outfile, sizeof(outfile), channel, "out");
 	out = fopen(outfile, "a");
 	strftime(buft, sizeof(buft), "%R", localtime(&t));
-	fprintf(out, "%s %s\n", buft, buffer);
+	fprintf(out, "%s %s\n", buft, buf);
 	fclose(out);
 }
 
-static void proc_fifo_privmsg(char *channel, char *buffer)
+static void proc_channels_privmsg(char *channel, char *buf)
 {
-	snprintf(buf, PIPE_BUF, "<%s> %s", nick, buffer);
-	print_out(channel, buf);
-	snprintf(buf, PIPE_BUF, "PRIVMSG %s :%s\r\n", channel, buffer);
-	write(irc, buf, strlen(buf));
+	snprintf(message, PIPE_BUF, "<%s> %s", nick, buf);
+	print_out(channel, message);
+	snprintf(message, PIPE_BUF, "PRIVMSG %s :%s\r\n", channel, buf);
+	write(irc, message, strlen(message));
 }
 
-static void proc_fifo_input(int fd, char *buffer)
+static void proc_channels_input(int fd, char *buf)
 {
 	static char infile[256];
 	char *p;
+	Channel *c = get_channel(fd);
+
 	/*int ret = 1; */
-	if(buffer[0] != '/') {
-		if(fifo[fd][0] != 0)
-			proc_fifo_privmsg(fifo[fd], buffer);
+	if(c->name[0] != '/' && c->name[0] != 0) {
+		proc_channels_privmsg(c->name, buf);
 		return;
 	}
-	switch (buffer[1]) {
+	switch (buf[1]) {
 	case 'j':
-		p = strchr(&buffer[3], ' ');
+		p = strchr(&buf[3], ' ');
 		if(p)
 			*p = 0;
-		snprintf(buf, PIPE_BUF, "JOIN %s\r\n", &buffer[3]);
-		add_channel(&buffer[3]);
+		snprintf(message, PIPE_BUF, "JOIN %s\r\n", &buf[3]);
+		add_channel(&buf[3]);
 		break;
 	case 't':
-		snprintf(buf, PIPE_BUF, "TOPIC %s :%s\r\n", fifo[fd], &buffer[3]);
+		snprintf(message, PIPE_BUF, "TOPIC %s :%s\r\n", c->name, &buf[3]);
 		break;
 	case 'a':
-		snprintf(buf, PIPE_BUF, "-!- %s is away \"%s\"", nick, &buffer[3]);
-		print_out(fifo[fd], buf);
-		if(buffer[2] == 0)
-			snprintf(buf, PIPE_BUF, "AWAY\r\n");
+		snprintf(message, PIPE_BUF, "-!- %s is away \"%s\"", nick, &buf[3]);
+		print_out(c->name, message);
+		if(buf[2] == 0)
+			snprintf(message, PIPE_BUF, "AWAY\r\n");
 		else
-			snprintf(buf, PIPE_BUF, "AWAY :%s\r\n", &buffer[3]);
+			snprintf(message, PIPE_BUF, "AWAY :%s\r\n", &buf[3]);
 		break;
 	case 'm':
-		p = strchr(&buffer[3], ' ');
+		p = strchr(&buf[3], ' ');
 		if(p) {
 			*p = 0;
-			add_channel(&buffer[3]);
-			proc_fifo_privmsg(&buffer[3], p + 1);
+			add_channel(&buf[3]);
+			proc_channels_privmsg(&buf[3], p + 1);
 		}
 		return;
 		break;
 	case 'n':
-		snprintf(nick, sizeof(nick),"%s", buffer);
-		snprintf(buf, PIPE_BUF, "NICK %s\r\n", &buffer[3]);
+		snprintf(nick, sizeof(nick),"%s", buf);
+		snprintf(message, PIPE_BUF, "NICK %s\r\n", &buf[3]);
 		break;
 	case 'l':
-		if(fifo[fd][0] == 0)
+		if(c->name[0] == 0)
 			return;
-		if(buffer[2] == ' ')
-			snprintf(buf, PIPE_BUF, "PART %s :%s\r\n", fifo[fd],
-					 &buffer[3]);
+		if(buf[2] == ' ')
+			snprintf(message, PIPE_BUF, "PART %s :%s\r\n", c->name, &buf[3]);
 		else
-			snprintf(buf, PIPE_BUF,
-					 "PART %s :ii - 500SLOC are too much\r\n", fifo[fd]);
-		write(irc, buf, strlen(buf));
+			snprintf(message, PIPE_BUF,
+					 "PART %s :ii - 500SLOC are too much\r\n", c->name);
+		write(irc, message, strlen(message));
 		close(fd);
-		create_filepath(infile, sizeof(infile), fifo[fd], "in");
+		create_filepath(infile, sizeof(infile), c->name, "in");
 		unlink(infile);
-		free(fifo[fd]);
-		fifo[fd] = 0;
+		rm_channel(c);
 		return;
 		break;
 	default:
-		snprintf(buf, PIPE_BUF, "%s\r\n", &buffer[1]);
+		snprintf(message, PIPE_BUF, "%s\r\n", &buf[1]);
 		break;
 	}
-	write(irc, buf, strlen(buf));
+	write(irc, message, strlen(message));
 }
 
-static void proc_server_cmd(char *buffer)
+static void proc_server_cmd(char *buf)
 {
 	char *argv[TOK_LAST], *cmd, *p;
 	int i;
-	if(!buffer)
+	if(!buf)
 		return;
 
 	for(i = 0; i < TOK_LAST; i++)
@@ -256,18 +311,18 @@ static void proc_server_cmd(char *buffer)
 	   <trailing> ::= <Any, possibly *empty*, sequence of octets not including NUL or CR or LF>
 	   <crlf>     ::= CR LF
 	 */
-	if(buffer[0] == ':') {		/* check prefix */
-		p = strchr(buffer, ' ');
+	if(buf[0] == ':') {		/* check prefix */
+		p = strchr(buf, ' ');
 		*p = 0;
 		for(++p; *p == ' '; p++);
 		cmd = p;
-		argv[TOK_NICKSRV] = &buffer[1];
-		if((p = strchr(buffer, '!'))) {
+		argv[TOK_NICKSRV] = &buf[1];
+		if((p = strchr(buf, '!'))) {
 			*p = 0;
 			argv[TOK_USER] = ++p;
 		}
 	} else
-		cmd = buffer;
+		cmd = buf;
 
 	/* remove CRLFs */
 	for(p = cmd; p && *p != 0; p++)
@@ -281,15 +336,15 @@ static void proc_server_cmd(char *buffer)
 	tokenize(&argv[TOK_CMD], TOK_LAST - TOK_CMD + 1, cmd, ' ');
 
 	if(!strncmp("PING", argv[TOK_CMD], 5)) {
-		snprintf(buf, PIPE_BUF, "PONG %s\r\n", argv[TOK_TEXT]);
-		write(irc, buf, strlen(buf));
+		snprintf(message, PIPE_BUF, "PONG %s\r\n", argv[TOK_TEXT]);
+		write(irc, message, strlen(message));
 		return;
 	} else if(!argv[TOK_NICKSRV] || !argv[TOK_USER]) {	/* server command */
-		snprintf(buf, PIPE_BUF, "%s", argv[TOK_TEXT] ? argv[TOK_TEXT] : "");
-		print_out(0, buf);
+		snprintf(message, PIPE_BUF, "%s", argv[TOK_TEXT] ? argv[TOK_TEXT] : "");
+		print_out(0, message);
 		return;
 	} else if(!strncmp("ERROR", argv[TOK_CMD], 6))
-		snprintf(buf, PIPE_BUF, "-!- error %s", argv[TOK_TEXT] ? argv[TOK_TEXT] : "unknown");
+		snprintf(message, PIPE_BUF, "-!- error %s", argv[TOK_TEXT] ? argv[TOK_TEXT] : "unknown");
 	else if(!strncmp("JOIN", argv[TOK_CMD], 5)) {
 		if(argv[TOK_TEXT]!=nil){
 			p = strchr(argv[TOK_TEXT], ' ');
@@ -297,97 +352,71 @@ static void proc_server_cmd(char *buffer)
 			*p = 0;
 		}
 		argv[TOK_CHAN] = argv[TOK_TEXT];
-		snprintf(buf, PIPE_BUF, "-!- %s(%s) has joined %s", argv[TOK_NICKSRV], argv[TOK_USER], argv[TOK_TEXT]);
+		snprintf(message, PIPE_BUF, "-!- %s(%s) has joined %s", argv[TOK_NICKSRV], argv[TOK_USER], argv[TOK_TEXT]);
 	} else if(!strncmp("PART", argv[TOK_CMD], 5)) {
-		snprintf(buf, PIPE_BUF, "-!- %s(%s) has left %s", argv[TOK_NICKSRV], argv[TOK_USER], argv[TOK_CHAN]);
+		snprintf(message, PIPE_BUF, "-!- %s(%s) has left %s", argv[TOK_NICKSRV], argv[TOK_USER], argv[TOK_CHAN]);
 	} else if(!strncmp("MODE", argv[TOK_CMD], 5))
-		snprintf(buf, PIPE_BUF, "-!- %s changed mode/%s -> %s %s", argv[TOK_NICKSRV], argv[TOK_CMD + 1], argv[TOK_CMD + 2], argv[TOK_CMD + 3]);
+		snprintf(message, PIPE_BUF, "-!- %s changed mode/%s -> %s %s", argv[TOK_NICKSRV], argv[TOK_CMD + 1], argv[TOK_CMD + 2], argv[TOK_CMD + 3]);
 	else if(!strncmp("QUIT", argv[TOK_CMD], 5))
-		snprintf(buf, PIPE_BUF, "-!- %s(%s) has quit %s \"%s\"", argv[TOK_NICKSRV], argv[TOK_USER], argv[TOK_CHAN], argv[TOK_TEXT] ? argv[TOK_TEXT] : "");
+		snprintf(message, PIPE_BUF, "-!- %s(%s) has quit %s \"%s\"", argv[TOK_NICKSRV], argv[TOK_USER], argv[TOK_CHAN], argv[TOK_TEXT] ? argv[TOK_TEXT] : "");
 	else if(!strncmp("NICK", argv[TOK_CMD], 5))
-		snprintf(buf, PIPE_BUF, "-!- %s changed nick to %s", argv[TOK_NICKSRV], argv[TOK_TEXT]);
+		snprintf(message, PIPE_BUF, "-!- %s changed nick to %s", argv[TOK_NICKSRV], argv[TOK_TEXT]);
 	else if(!strncmp("TOPIC", argv[TOK_CMD], 6))
-		snprintf(buf, PIPE_BUF, "-!- %s changed topic to \"%s\"", argv[TOK_NICKSRV], argv[TOK_TEXT] ? argv[TOK_TEXT] : "");
+		snprintf(message, PIPE_BUF, "-!- %s changed topic to \"%s\"", argv[TOK_NICKSRV], argv[TOK_TEXT] ? argv[TOK_TEXT] : "");
 	else if(!strncmp("KICK", argv[TOK_CMD], 5))
-		snprintf(buf, PIPE_BUF, "-!- %s kicked %s (\"%s\")", argv[TOK_NICKSRV], argv[TOK_ARG], argv[TOK_TEXT] ? argv[TOK_TEXT] : "");
+		snprintf(message, PIPE_BUF, "-!- %s kicked %s (\"%s\")", argv[TOK_NICKSRV], argv[TOK_ARG], argv[TOK_TEXT] ? argv[TOK_TEXT] : "");
 	else if(!strncmp("NOTICE", argv[TOK_CMD], 7))
-		snprintf(buf, PIPE_BUF, "-!- \"%s\")", argv[TOK_TEXT] ? argv[TOK_TEXT] : "");
+		snprintf(message, PIPE_BUF, "-!- \"%s\")", argv[TOK_TEXT] ? argv[TOK_TEXT] : "");
 	else if(!strncmp("PRIVMSG", argv[TOK_CMD], 8))
-		snprintf(buf, PIPE_BUF, "<%s> %s", argv[TOK_NICKSRV], argv[TOK_TEXT] ? argv[TOK_TEXT] : "");
+		snprintf(message, PIPE_BUF, "<%s> %s", argv[TOK_NICKSRV], argv[TOK_TEXT] ? argv[TOK_TEXT] : "");
 	if(!argv[TOK_CHAN] || !strncmp(argv[TOK_CHAN], nick, strlen(nick)))
-		print_out(argv[TOK_NICKSRV], buf);
+		print_out(argv[TOK_NICKSRV], message);
 	else
-		print_out(argv[TOK_CHAN], buf);
+		print_out(argv[TOK_CHAN], message);
 }
 
-static int open_fifo(char *channel)
+static int read_line(int fd, size_t res_len, char *buf)
 {
-	static char infile[256];
-	create_filepath(infile, sizeof(infile), channel, "in");
-	if(access(infile, F_OK) == -1)
-		mkfifo(infile, S_IRWXU);
-	return open(infile, O_RDONLY | O_NONBLOCK, 0);
-}
-
-static int add_channel(char *channel)
-{
-	int i;
-	char *new;
-
-	if(channel && channel[0] != 0) {
-		for(i = 0; i < 256; i++)
-			if(fifo[i] && !strncmp(channel, fifo[i], strlen(channel)))
-				return 1;
-	}
-	new = strdup(channel);
-	if((i = open_fifo(new)) >= 0)
-		fifo[i] = new;
-	else {
-		perror("ii: cannot create in fifo");
-		return 0;
-	}
-	return 1;
-}
-
-static int readl_fd(int fd)
-{
-	int i = 0;
+	size_t i = 0;
 	char c;
 	do {
 		if(read(fd, &c, sizeof(char)) != sizeof(char))
-			return 0;
-		_buf[i++] = c;
+			return -1;
+		buf[i++] = c;
 	}
-	while(c != '\n' && i<PIPE_BUF);
-	_buf[i - 1] = 0;			/* eliminates '\n' */
-	return 1;
+	while(c != '\n' && i < res_len);
+	buf[i - 1] = 0;			/* eliminates '\n' */
+	return 0;
 }
 
-static void handle_fifo_input(int fd)
+static void handle_channels_input(Channel *c)
 {
-	if(!readl_fd(fd)) {
-		int i;
-		if((i = open_fifo(fifo[fd]))) {
-			fifo[i] = fifo[fd];
-			fifo[fd] = 0;
-		}
+	static char buf[PIPE_BUF];
+	if(read_line(c->fd, PIPE_BUF, buf) == -1) {
+		int fd = open_channel(c->name);
+		if(fd != -1)
+			c->fd = fd;
+		else
+			rm_channel(c);
 		return;
 	}
-	proc_fifo_input(fd, _buf);
+	proc_channels_input(c->fd, buf);
 }
 
 static void handle_server_output()
 {
-	if(!readl_fd(irc)) {
+	static char buf[PIPE_BUF];
+	if(read_line(irc, PIPE_BUF, buf) == -1) {
 		perror("ii: remote host closed connection");
 		exit(EXIT_FAILURE);
 	}
-	proc_server_cmd(_buf);
+	proc_server_cmd(buf);
 }
 
 static void run()
 {
-	int i, r, maxfd;
+	Channel *c;
+	int r, maxfd;
 	fd_set rd;
 
 	for(;;) {
@@ -395,11 +424,10 @@ static void run()
 		FD_ZERO(&rd);
 		maxfd = irc;
 		FD_SET(irc, &rd);
-		for(i = 0; i < 256; i++) {
-			if(fifo[i]) {
-				if(maxfd < i)
-					maxfd = i;
-				FD_SET(i, &rd);
+		for(c = channels; c; c = c->next) {
+			if(maxfd < c->fd) {
+				maxfd = c->fd;
+				FD_SET(c->fd, &rd);
 			}
 		}
 
@@ -410,12 +438,12 @@ static void run()
 			perror("ii: error on select()");
 			exit(EXIT_FAILURE);
 		} else if(r > 0) {
-			for(i = 0; i < 256; i++) {
-				if(FD_ISSET(i, &rd)) {
-					if(i == irc)
+			for(c = channels; c; c = c->next) {
+				if(FD_ISSET(c->fd, &rd)) {
+					if(c->fd == irc)
 						handle_server_output();
 					else
-						handle_fifo_input(i);
+						handle_channels_input(c);
 				}
 			}
 		}
@@ -447,7 +475,7 @@ int main(int argc, char *argv[])
 			snprintf(prefix,sizeof(prefix),"%s", argv[++i]);
 			break;
 		case 's':
-			server = argv[++i];
+			host = argv[++i];
 			break;
 		case 'p':
 			port = atoi(argv[++i]);
@@ -467,17 +495,13 @@ int main(int argc, char *argv[])
 		}
 	}
 	irc = tcpopen(port);
-	if(!snprintf(path, sizeof(path), "%s/irc/%s", prefix, server)) {
+	if(!snprintf(path, sizeof(path), "%s/irc/%s", prefix, host)) {
 		fprintf(stderr, "%s", "ii: path to irc directory too long\n");
 		exit(EXIT_FAILURE);
 	}
-	create_lastdir(path);
+	create_dirtree(path);
 
-	for(i = 0; i < 256; i++)
-		fifo[i] = 0;
-
-	if(!add_channel(""))
-		exit(EXIT_FAILURE);
+	add_channel(""); /* master channel */
 	login(key, fullname);
 	run();
 
