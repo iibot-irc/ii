@@ -5,9 +5,9 @@ Where is IRC command xy (ignore etc.)?
 ii is for advanced users, please use standard tools like awk, sed and grep for
 this. This can be done easily and will not bloat the code.
 
-Where is a graphical interface? 
+Where is a graphical interface?
 -------------------------------
-Basically ii follows the UNIX philosophie so it is only file based. But it
+Basically ii follows the UNIX philosophy so it is only file based. But it
 should be easy to build different interface because they only have to handle
 the FIFOs and output files. Feel free to implement or wait until we have done
 this.
