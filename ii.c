@@ -1,6 +1,6 @@
 /*
- * (C)opyright MMV Anselm R. Garbe <garbeam at gmail dot com>
- *                 Nico Golde <nico at ngolde dot de>
+ * (C)opyright MMV-MMVI Anselm R. Garbe <garbeam at gmail dot com>
+ * (C)opyright MMV-MMVI Nico Golde <nico at ngolde dot de>
  * See LICENSE file for license details.
  */
 
@@ -471,27 +471,13 @@ int main(int argc, char *argv[])
 
 	for(i = 1; (i + 1 < argc) && (argv[i][0] == '-'); i++) {
 		switch (argv[i][1]) {
-		case 'i':
-			snprintf(prefix,sizeof(prefix),"%s", argv[++i]);
-			break;
-		case 's':
-			host = argv[++i];
-			break;
-		case 'p':
-			port = atoi(argv[++i]);
-			break;
-		case 'n':
-			snprintf(nick,sizeof(nick),"%s", argv[++i]);
-			break;
-		case 'k':
-			key = argv[++i];
-			break;
-		case 'f':
-			fullname = argv[++i];
-			break;
-		default:
-			usage();
-			break;
+		case 'i': snprintf(prefix,sizeof(prefix),"%s", argv[++i]); break;
+		case 's': host = argv[++i]; break;
+		case 'p': port = atoi(argv[++i]); break;
+		case 'n': snprintf(nick,sizeof(nick),"%s", argv[++i]); break;
+		case 'k': key = argv[++i]; break;
+		case 'f': fullname = argv[++i]; break;
+		default: usage(); break;
 		}
 	}
 	irc = tcpopen(port);
