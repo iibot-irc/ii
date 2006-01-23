@@ -124,7 +124,7 @@ static void add_channel(char *name)
 		perror("ii: cannot allocate memory");
 		exit(EXIT_FAILURE);
 	}
-	if(channels)
+	if(!channels)
 		channels = c;
 	else
 		c->next = channels;
