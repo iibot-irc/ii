@@ -44,7 +44,7 @@ static void usage()
 {
 	fprintf(stderr, "%s",
 			"ii - irc it - " VERSION "\n"
-			"  (C)opyright MMV Anselm R. Garbe, Nico Golde\n"
+			"  (C)opyright MMVI Anselm R. Garbe, Nico Golde\n"
 			"usage: ii [-i <irc dir>] [-s <host>] [-p <port>]\n"
 			"          [-n <nick>] [-k <password>] [-f <fullname>]\n");
 	exit(EXIT_SUCCESS);
@@ -108,10 +108,15 @@ static int open_channel(char *name)
 static void add_channel(char *name)
 {
 	Channel *c;
-	int fd = open_channel(name);
+	int fd;
 
+	for(c = channels; c; c = c->next)
+		if(!strcmp(name, c->name))
+			return; /* already handled */
+
+    fd = open_channel(name);
 	if(fd == -1) {
-		perror("ii: cannot create in channels");
+		perror("ii: cannot create in channel");
 		return;
 	}
 	if(!channels)
@@ -420,7 +425,6 @@ static void run()
 	fd_set rd;
 
 	for(;;) {
-		/* prepare */
 		FD_ZERO(&rd);
 		maxfd = irc;
 		FD_SET(irc, &rd);
@@ -438,14 +442,11 @@ static void run()
 			perror("ii: error on select()");
 			exit(EXIT_FAILURE);
 		} else if(r > 0) {
-			for(c = channels; c; c = c->next) {
-				if(FD_ISSET(c->fd, &rd)) {
-					if(c->fd == irc)
-						handle_server_output();
-					else
-						handle_channels_input(c);
-				}
-			}
+			if(FD_ISSET(irc, &rd))
+				handle_server_output();
+			for(c = channels; c; c = c->next)
+				if(FD_ISSET(c->fd, &rd))
+					handle_channels_input(c);
 		}
 	}
 }
