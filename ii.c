@@ -119,17 +119,15 @@ static void add_channel(char *name)
 		perror("ii: cannot create in channel");
 		return;
 	}
-	if(!channels)
-		channels = c = calloc(1, sizeof(Channel));
-	else {
-		for(c = channels; c && c->next; c = c->next);
-		c->next = calloc(1, sizeof(Channel));
-		c = c->next;
-	}
+	c = calloc(1, sizeof(Channel));
 	if(!c) {
 		perror("ii: cannot allocate memory");
 		exit(EXIT_FAILURE);
 	}
+	if(channels)
+		channels = c;
+	else
+		c->next = channels;
 	c->fd = fd;
 	c->name = strdup(name);
 }
