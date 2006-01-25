@@ -126,8 +126,10 @@ static void add_channel(char *name)
 	}
 	if(!channels)
 		channels = c;
-	else
+	else {
 		c->next = channels;
+		channels = c;
+	}
 	c->fd = fd;
 	c->name = strdup(name);
 }
