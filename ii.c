@@ -236,8 +236,7 @@ static void proc_channels_input(int fd, char *buf)
 	char *p;
 	Channel *c = get_channel(fd);
 
-	/*int ret = 1; */
-	if(c->name[0] != '/' && c->name[0] != 0) {
+	if(buf[0] != '/' && buf[0] != 0) {
 		proc_channels_privmsg(c->name, buf);
 		return;
 	}
