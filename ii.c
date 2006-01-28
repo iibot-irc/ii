@@ -172,7 +172,7 @@ static int tcpopen(unsigned short port)
 		exit(EXIT_FAILURE);
 	}
 	sin.sin_family = AF_INET;
-	bcopy(hp->h_addr, (char *) &sin.sin_addr, hp->h_length);
+	memcpy(&sin.sin_addr, hp->h_addr, hp->h_length);
 	sin.sin_port = htons(port);
 	if((fd = socket(AF_INET, SOCK_STREAM, 0)) < 0) {
 		perror("ii: cannot create socket");
