@@ -463,7 +463,7 @@ int main(int argc, char *argv[])
 		exit(EXIT_FAILURE);
 	}
 	snprintf(nick, sizeof(nick), "%s", spw->pw_name);
-	snprintf(prefix, sizeof(prefix),"%s", spw->pw_dir);
+	snprintf(prefix, sizeof(prefix),"%s/irc", spw->pw_dir);
 
 	if(argc == 2 && argv[1][0] == '-' && argv[1][1] == 'h')
 		usage();
@@ -480,7 +480,7 @@ int main(int argc, char *argv[])
 		}
 	}
 	irc = tcpopen(port);
-	if(!snprintf(path, sizeof(path), "%s/irc/%s", prefix, host)) {
+	if(!snprintf(path, sizeof(path), "%s/%s", prefix, host)) {
 		fprintf(stderr, "%s", "ii: path to irc directory too long\n");
 		exit(EXIT_FAILURE);
 	}
