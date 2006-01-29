@@ -197,7 +197,8 @@ static size_t tokenize(char **result, size_t reslen, char *str, char delim)
 		} else
 			n++;
 	}
-	result[i++] = p;
+	if(i<reslen)
+		result[i++] = p;
 	return i + 2;				/* number of tokens */
 }
 
@@ -329,7 +330,7 @@ static void proc_server_cmd(char *buf)
 		*p = 0;
 		argv[TOK_TEXT] = ++p;
 	}
-	tokenize(&argv[TOK_CMD], TOK_LAST - TOK_CMD + 1, cmd, ' ');
+	tokenize(&argv[TOK_CMD], TOK_LAST - TOK_CMD, cmd, ' ');
 
 	if(!strncmp("PING", argv[TOK_CMD], 5)) {
 		snprintf(message, PIPE_BUF, "PONG %s\r\n", argv[TOK_TEXT]);
