@@ -388,7 +388,6 @@ static int read_line(int fd, size_t res_len, char *buf)
 static void handle_channels_input(Channel *c)
 {
 	static char buf[PIPE_BUF];
-	memset(buf,0,sizeof(buf));
 	if(read_line(c->fd, PIPE_BUF, buf) == -1) {
 		int fd = open_channel(c->name);
 		if(fd != -1)
