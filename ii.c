@@ -421,10 +421,9 @@ static void run()
 		maxfd = irc;
 		FD_SET(irc, &rd);
 		for(c = channels; c; c = c->next) {
-			if(maxfd < c->fd) {
+			if(maxfd < c->fd)
 				maxfd = c->fd;
-				FD_SET(c->fd, &rd);
-			}
+			FD_SET(c->fd, &rd);
 		}
 
 		r = select(maxfd + 1, &rd, 0, 0, 0);
