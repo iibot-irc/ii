@@ -44,7 +44,7 @@ static void usage()
 {
 	fprintf(stderr, "%s",
 			"ii - irc it - " VERSION "\n"
-			"  (C)opyright MMVI Anselm R. Garbe, Nico Golde\n"
+			"(C)opyright MMVI Anselm R. Garbe, Nico Golde\n"
 			"usage: ii [-i <irc dir>] [-s <host>] [-p <port>]\n"
 			"          [-n <nick>] [-k <password>] [-f <fullname>]\n");
 	exit(EXIT_SUCCESS);
@@ -361,7 +361,7 @@ static void proc_server_cmd(char *buf)
 	} else if(!strncmp("MODE", argv[TOK_CMD], 5))
 		snprintf(message, PIPE_BUF, "-!- %s changed mode/%s -> %s %s", argv[TOK_NICKSRV], argv[TOK_CMD + 1], argv[TOK_CMD + 2], argv[TOK_CMD + 3]);
 	else if(!strncmp("QUIT", argv[TOK_CMD], 5))
-		snprintf(message, PIPE_BUF, "-!- %s(%s) has quit %s \"%s\"", argv[TOK_NICKSRV], argv[TOK_USER], argv[TOK_CHAN], argv[TOK_TEXT] ? argv[TOK_TEXT] : "");
+		snprintf(message, PIPE_BUF, "-!- %s(%s) has quit \"%s\"", argv[TOK_NICKSRV], argv[TOK_USER], argv[TOK_TEXT] ? argv[TOK_TEXT] : "");
 	else if(!strncmp("NICK", argv[TOK_CMD], 5))
 		snprintf(message, PIPE_BUF, "-!- %s changed nick to %s", argv[TOK_NICKSRV], argv[TOK_TEXT]);
 	else if(!strncmp("TOPIC", argv[TOK_CMD], 6))
