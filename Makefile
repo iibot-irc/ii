@@ -34,9 +34,9 @@ ii: ${OBJ}
 	@${CC} -o $@ ${OBJ} ${LDFLAGS}
 
 install: all
-	@cp ii ${DESTDIR}${PREFIX}/bin
+	@cp -f ii ${DESTDIR}${PREFIX}/bin
 	@chmod 775 ${DESTDIR}${PREFIX}/bin/ii
-	@cp ii.1 ${DESTDIR}${MANPREFIX}/man1
+	@cp -f ii.1 ${DESTDIR}${MANPREFIX}/man1
 	@chmod 444 ${DESTDIR}${MANPREFIX}/man1/ii.1
 	@echo "installed ii"
 
