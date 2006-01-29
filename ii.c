@@ -228,7 +228,6 @@ static void proc_channels_input(Channel *c, char *buf)
 {
 	static char infile[256];
 	char *p;
-
 	if(buf[0] != '/' && buf[0] != 0) {
 		proc_channels_privmsg(c->name, buf);
 		return;
@@ -262,7 +261,7 @@ static void proc_channels_input(Channel *c, char *buf)
 		return;
 		break;
 	case 'n':
-		snprintf(nick, sizeof(nick),"%s", buf);
+		snprintf(nick, sizeof(nick),"%s", &buf[3]);
 		snprintf(message, PIPE_BUF, "NICK %s\r\n", &buf[3]);
 		break;
 	case 'l':
@@ -389,6 +388,7 @@ static int read_line(int fd, size_t res_len, char *buf)
 static void handle_channels_input(Channel *c)
 {
 	static char buf[PIPE_BUF];
+	memset(buf,0,sizeof(buf));
 	if(read_line(c->fd, PIPE_BUF, buf) == -1) {
 		int fd = open_channel(c->name);
 		if(fd != -1)
