@@ -89,13 +89,6 @@ static void create_filepath(char *filepath, size_t len, char *channel, char *suf
 	}
 }
 
-static Channel *get_channel(int fd)
-{
-	Channel *c;
-	for (c = channels; c && c->fd != fd; c = c->next);
-	return c;
-}
-
 static int open_channel(char *name)
 {
 	static char infile[256];
