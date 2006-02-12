@@ -23,6 +23,9 @@
 #ifndef nil
 #define nil NULL /* for those who don't understand, nil is used in Plan9 */
 #endif
+#ifndef PIPE_BUF /* FreeBSD don't know PIPE_BUF */
+#define PIPE_BUF 4096
+#endif
 
 enum { TOK_NICKSRV = 0, TOK_USER, TOK_CMD, TOK_CHAN, TOK_ARG, TOK_TEXT, TOK_LAST };
 
