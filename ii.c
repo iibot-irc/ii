@@ -17,6 +17,7 @@
 #include <sys/stat.h>
 #include <sys/types.h>
 #include <sys/socket.h>
+#include <ctype.h>
 #include <time.h>
 #include <unistd.h>
 
@@ -52,6 +53,11 @@ static void usage()
 			"          [-n <nick>] [-k <password>] [-f <fullname>]\n");
 	exit(EXIT_SUCCESS);
 }
+static char *lower(char *s)
+{
+	char *p; for(p = s; p && *p; p++) *p = tolower(*p);
+	return s;
+}
 
 /* creates directories top-down, if necessary */
 static void create_dirtree(const char *dir)
@@ -76,10 +82,10 @@ static void create_dirtree(const char *dir)
 static int get_filepath(char *filepath, size_t len, char *channel, char *file)
 {
 	if(channel) {
-		if(!snprintf(filepath, len, "%s/%s", path, channel))
+		if(!snprintf(filepath, len, "%s/%s", path, lower(channel)))
 			return 0;
 		create_dirtree(filepath);
-		return snprintf(filepath, len, "%s/%s/%s", path, channel, file);
+		return snprintf(filepath, len, "%s/%s/%s", path,lower(channel), file);
 	}
 	return snprintf(filepath, len, "%s/%s", path, file);
 }
