@@ -206,7 +206,7 @@ static size_t tokenize(char **result, size_t reslen, char *str, char delim)
 		} else
 			n++;
 	}
-	if(i<reslen)
+	if(i<reslen && p < n && strlen(p))
 		result[i++] = p;
 	return i;				/* number of tokens */
 }
