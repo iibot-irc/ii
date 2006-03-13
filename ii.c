@@ -208,7 +208,7 @@ static size_t tokenize(char **result, size_t reslen, char *str, char delim)
 	}
 	if(i<reslen)
 		result[i++] = p;
-	return i + 2;				/* number of tokens */
+	return i;				/* number of tokens */
 }
 
 static void print_out(char *channel, char *buf)
