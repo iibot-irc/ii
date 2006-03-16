@@ -342,7 +342,9 @@ static void proc_server_cmd(char *buf)
 	}
 	tokenize(&argv[TOK_CMD], TOK_LAST - TOK_CMD, cmd, ' ');
 
-	if(!strncmp("PING", argv[TOK_CMD], 5)) {
+	if(!strncmp("PONG", argv[TOK_CMD], 5)) {
+		return;
+	} else if(!strncmp("PING", argv[TOK_CMD], 5)) {
 		snprintf(message, PIPE_BUF, "PONG %s\r\n", argv[TOK_TEXT]);
 		write(irc, message, strlen(message));
 		return;
