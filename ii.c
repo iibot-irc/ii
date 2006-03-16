@@ -38,6 +38,8 @@ struct Channel {
 };
 
 static int irc;
+#define PING_TIMEOUT 300
+static time_t last_response;
 static Channel *channels = nil;
 static char *host = "irc.freenode.net";
 static char nick[32];			/* might change while running */
@@ -423,7 +425,10 @@ static void run()
 	Channel *c;
 	int r, maxfd;
 	fd_set rd;
+	struct timeval tv;
+	char ping_msg[512];
 
+	snprintf(ping_msg, sizeof(ping_msg), "PING %s\r\n", host);
 	for(;;) {
 		FD_ZERO(&rd);
 		maxfd = irc;
@@ -434,19 +439,29 @@ static void run()
 			FD_SET(c->fd, &rd);
 		}
 
-		r = select(maxfd + 1, &rd, 0, 0, 0);
-		if(r == -1 && errno == EINTR)
-			continue;
+		tv.tv_sec = 120;
+		tv.tv_usec = 0;
+		r = select(maxfd + 1, &rd, 0, 0, &tv);
 		if(r < 0) {
+			if(errno == EINTR)
+				continue;
 			perror("ii: error on select()");
 			exit(EXIT_FAILURE);
-		} else if(r > 0) {
-			if(FD_ISSET(irc, &rd))
-				handle_server_output();
-			for(c = channels; c; c = c->next)
-				if(FD_ISSET(c->fd, &rd))
-					handle_channels_input(c);
+		} else if(r == 0) {
+			if(time(NULL) - last_response >= PING_TIMEOUT) {
+				    print_out(NULL, "-!- ii shutting down: ping timeout");
+				    exit(EXIT_FAILURE);
+			}
+			write(irc, ping_msg, strlen(ping_msg));
+			continue;
 		}
+		if(FD_ISSET(irc, &rd)) {
+			handle_server_output();
+			last_response = time(NULL);
+		}
+		for(c = channels; c; c = c->next)
+			if(FD_ISSET(c->fd, &rd))
+				handle_channels_input(c);
 	}
 }
 
