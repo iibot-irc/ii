@@ -34,17 +34,14 @@ ii: ${OBJ}
 	@${CC} -o $@ ${OBJ} ${LDFLAGS}
 
 install: all
-	@mkdir -p ${DESTDIR}${PREFIX}/bin
-	@cp -f ii ${DESTDIR}${PREFIX}/bin
-	@chmod 755 ${DESTDIR}${PREFIX}/bin/ii
-	@mkdir -p ${DESTDIR}${MANPREFIX}/man1
-	@cp -f ii.1 ${DESTDIR}${MANPREFIX}/man1
-	@chmod 444 ${DESTDIR}${MANPREFIX}/man1/ii.1
+	@install -d ${DESTDIR}${BINDIR} ${DESTDIR}${MAN1DIR}
+	@install -m 775 ii ${DESTDIR}${BINDIR}
+	@install -m 444 ii.1 ${DESTDIR}${MAN1DIR}
 	@echo "installed ii"
 
 uninstall: all
-	rm -f ${DESTDIR}${MANPREFIX}/man1/ii.1
-	rm -f ${DESTDIR}${PREFIX}/bin/ii
+	rm -f ${DESTDIR}${MAN1DIR}/ii.1
+	rm -f ${DESTDIR}${BINDIR}/ii
 
 clean:
 	rm -f ii *~ *.o *core

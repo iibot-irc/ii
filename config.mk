@@ -2,7 +2,11 @@
 
 # paths
 PREFIX      = /usr/local
-MANPREFIX   = ${PREFIX}/share/man
+BINDIR      = ${PREFIX}/bin		
+MANDIR      = ${PREFIX}/share/man
+MAN1DIR     = ${MANDIR}/man1
+# Set the following to install to a different root
+DESTDIR     =
 
 INCDIR      = ${PREFIX}/include
 LIBDIR      = ${PREFIX}/lib
