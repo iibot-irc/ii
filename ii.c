@@ -248,8 +248,17 @@ static void proc_channels_input(Channel *c, char *buf)
 		p = strchr(&buf[3], ' ');
 		if(p)
 			*p = 0;
-		snprintf(message, PIPE_BUF, "JOIN %s\r\n", &buf[3]);
-		add_channel(&buf[3]);
+		if(buf[3]=='#'){
+			snprintf(message, PIPE_BUF, "JOIN %s\r\n", &buf[3]);
+			add_channel(&buf[3]);
+		}
+		else{
+			if(p){
+				add_channel(&buf[3]);
+				proc_channels_privmsg(&buf[3], p + 1);
+				return;
+			}
+		}
 		break;
 	case 't':
 		snprintf(message, PIPE_BUF, "TOPIC %s :%s\r\n", c->name, &buf[3]);
@@ -261,15 +270,6 @@ static void proc_channels_input(Channel *c, char *buf)
 			snprintf(message, PIPE_BUF, "AWAY\r\n");
 		else
 			snprintf(message, PIPE_BUF, "AWAY :%s\r\n", &buf[3]);
-		break;
-	case 'm':
-		p = strchr(&buf[3], ' ');
-		if(p) {
-			*p = 0;
-			add_channel(&buf[3]);
-			proc_channels_privmsg(&buf[3], p + 1);
-		}
-		return;
 		break;
 	case 'n':
 		snprintf(nick, sizeof(nick),"%s", &buf[3]);
