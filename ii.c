@@ -6,6 +6,7 @@
 
 #include <errno.h>
 #include <netdb.h>
+#include <sys/types.h>
 #include <netinet/in.h>
 #include <stdio.h>
 #include <stdlib.h>
@@ -15,7 +16,6 @@
 #include <pwd.h>
 #include <signal.h>
 #include <sys/stat.h>
-#include <sys/types.h>
 #include <sys/socket.h>
 #include <ctype.h>
 #include <time.h>
