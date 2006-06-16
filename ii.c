@@ -301,7 +301,7 @@ static void proc_server_cmd(char *buf)
 {
 	char *argv[TOK_LAST], *cmd, *p;
 	int i;
-	if(!buf)
+	if(!buf || strlen(buf)<1)
 		return;
 
 	for(i = 0; i < TOK_LAST; i++)
