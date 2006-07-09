@@ -217,12 +217,12 @@ static void print_out(char *channel, char *buf)
 {
 	static char outfile[256];
 	FILE *out;
-	static char buft[8];
+	static char buft[18];
 	time_t t = time(0);
 
 	create_filepath(outfile, sizeof(outfile), channel, "out");
 	out = fopen(outfile, "a");
-	strftime(buft, sizeof(buft), "%R", localtime(&t));
+	strftime(buft, sizeof(buft), "%F %R", localtime(&t));
 	fprintf(out, "%s %s\n", buft, buf);
 	fclose(out);
 }
