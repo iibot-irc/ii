@@ -2,7 +2,7 @@
 
 # paths
 PREFIX      = /usr/local
-BINDIR      = ${PREFIX}/bin		
+BINDIR      = ${PREFIX}/bin
 MANDIR      = ${PREFIX}/share/man
 MAN1DIR     = ${MANDIR}/man1
 # Set the following to install to a different root
