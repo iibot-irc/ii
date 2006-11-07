@@ -248,7 +248,7 @@ static void proc_channels_input(Channel *c, char *buf)
 		p = strchr(&buf[3], ' ');
 		if(p)
 			*p = 0;
-		if(buf[3]=='#'){
+		if((buf[3]=='#')||(buf[3]=='&')||(buf[3]=='+')||(buf[3]=='!')){
 			snprintf(message, PIPE_BUF, "JOIN %s\r\n", &buf[3]);
 			add_channel(&buf[3]);
 		}
