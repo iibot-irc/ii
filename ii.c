@@ -245,9 +245,8 @@ static void proc_channels_input(Channel *c, char *buf)
 	}
 	switch (buf[1]) {
 	case 'j':
-		p = strchr(&buf[3], ' ');
-		if(p)
-			*p = 0;
+		if(!(p = strchr(&buf[3], ' '))) return;
+		*p = 0;
 		if((buf[3]=='#')||(buf[3]=='&')||(buf[3]=='+')||(buf[3]=='!')){
 			snprintf(message, PIPE_BUF, "JOIN %s\r\n", &buf[3]);
 			add_channel(&buf[3]);
@@ -342,7 +341,7 @@ static void proc_server_cmd(char *buf)
 	}
 	tokenize(&argv[TOK_CMD], TOK_LAST - TOK_CMD, cmd, ' ');
 
-	if(!strncmp("PONG", argv[TOK_CMD], 5)) {
+	if(!argv[TOK_CMD] || !strncmp("PONG", argv[TOK_CMD], 5)) {
 		return;
 	} else if(!strncmp("PING", argv[TOK_CMD], 5)) {
 		snprintf(message, PIPE_BUF, "PONG %s\r\n", argv[TOK_TEXT]);
