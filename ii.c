@@ -318,7 +318,7 @@ static void proc_server_cmd(char *buf)
 	   <crlf>     ::= CR LF
 	 */
 	if(buf[0] == ':') {		/* check prefix */
-		p = strchr(buf, ' ');
+		if (!(p = strchr(buf, ' '))) return;
 		*p = 0;
 		for(++p; *p == ' '; p++);
 		cmd = p;
