@@ -221,7 +221,7 @@ static void print_out(char *channel, char *buf)
 	time_t t = time(0);
 
 	create_filepath(outfile, sizeof(outfile), channel, "out");
-	out = fopen(outfile, "a");
+	if(!(out = fopen(outfile, "a"))) return;
 	strftime(buft, sizeof(buft), "%F %R", localtime(&t));
 	fprintf(out, "%s %s\n", buft, buf);
 	fclose(out);
