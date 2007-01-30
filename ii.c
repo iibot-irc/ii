@@ -401,6 +401,7 @@ static void handle_channels_input(Channel *c)
 {
 	static char buf[PIPE_BUF];
 	if(read_line(c->fd, PIPE_BUF, buf) == -1) {
+		close(c->fd);
 		int fd = open_channel(c->name);
 		if(fd != -1)
 			c->fd = fd;
