@@ -118,7 +118,7 @@ static void add_channel(char *name)
 		if(!strcmp(name, c->name))
 			return; /* already handled */
 
-    fd = open_channel(name);
+	fd = open_channel(name);
 	if(fd == -1) {
 		perror("ii: cannot create in channel");
 		return;
@@ -156,11 +156,11 @@ static void login(char *key, char *fullname)
 {
 	if(key)
 		snprintf(message, PIPE_BUF,
-				 "PASS %s\r\nNICK %s\r\nUSER %s localhost %s :%s\r\n", key,
-				 nick, nick, host, fullname ? fullname : nick);
+				"PASS %s\r\nNICK %s\r\nUSER %s localhost %s :%s\r\n", key,
+				nick, nick, host, fullname ? fullname : nick);
 	else
 		snprintf(message, PIPE_BUF, "NICK %s\r\nUSER %s localhost %s :%s\r\n",
-				 nick, nick, host, fullname ? fullname : nick);
+				nick, nick, host, fullname ? fullname : nick);
 	write(irc, message, strlen(message));	/* login */
 }
 
@@ -244,54 +244,54 @@ static void proc_channels_input(Channel *c, char *buf)
 		return;
 	}
 	switch (buf[1]) {
-	case 'j':
-		p = strchr(&buf[3], ' ');
-		if(p) *p = 0;
-		if((buf[3]=='#')||(buf[3]=='&')||(buf[3]=='+')||(buf[3]=='!')){
-			snprintf(message, PIPE_BUF, "JOIN %s\r\n", &buf[3]);
-			add_channel(&buf[3]);
-		}
-		else{
-			if(p){
+		case 'j':
+			p = strchr(&buf[3], ' ');
+			if(p) *p = 0;
+			if((buf[3]=='#')||(buf[3]=='&')||(buf[3]=='+')||(buf[3]=='!')){
+				snprintf(message, PIPE_BUF, "JOIN %s\r\n", &buf[3]);
 				add_channel(&buf[3]);
-				proc_channels_privmsg(&buf[3], p + 1);
-				return;
 			}
-		}
-		break;
-	case 't':
-		snprintf(message, PIPE_BUF, "TOPIC %s :%s\r\n", c->name, &buf[3]);
-		break;
-	case 'a':
-		snprintf(message, PIPE_BUF, "-!- %s is away \"%s\"", nick, &buf[3]);
-		print_out(c->name, message);
-		if(buf[2] == 0)
-			snprintf(message, PIPE_BUF, "AWAY\r\n");
-		else
-			snprintf(message, PIPE_BUF, "AWAY :%s\r\n", &buf[3]);
-		break;
-	case 'n':
-		snprintf(nick, sizeof(nick),"%s", &buf[3]);
-		snprintf(message, PIPE_BUF, "NICK %s\r\n", &buf[3]);
-		break;
-	case 'l':
-		if(c->name[0] == 0)
+			else{
+				if(p){
+					add_channel(&buf[3]);
+					proc_channels_privmsg(&buf[3], p + 1);
+					return;
+				}
+			}
+			break;
+		case 't':
+			snprintf(message, PIPE_BUF, "TOPIC %s :%s\r\n", c->name, &buf[3]);
+			break;
+		case 'a':
+			snprintf(message, PIPE_BUF, "-!- %s is away \"%s\"", nick, &buf[3]);
+			print_out(c->name, message);
+			if(buf[2] == 0)
+				snprintf(message, PIPE_BUF, "AWAY\r\n");
+			else
+				snprintf(message, PIPE_BUF, "AWAY :%s\r\n", &buf[3]);
+			break;
+		case 'n':
+			snprintf(nick, sizeof(nick),"%s", &buf[3]);
+			snprintf(message, PIPE_BUF, "NICK %s\r\n", &buf[3]);
+			break;
+		case 'l':
+			if(c->name[0] == 0)
+				return;
+			if(buf[2] == ' ')
+				snprintf(message, PIPE_BUF, "PART %s :%s\r\n", c->name, &buf[3]);
+			else
+				snprintf(message, PIPE_BUF,
+						"PART %s :ii - 500SLOC are too much\r\n", c->name);
+			write(irc, message, strlen(message));
+			close(c->fd);
+			create_filepath(infile, sizeof(infile), c->name, "in");
+			unlink(infile);
+			rm_channel(c);
 			return;
-		if(buf[2] == ' ')
-			snprintf(message, PIPE_BUF, "PART %s :%s\r\n", c->name, &buf[3]);
-		else
-			snprintf(message, PIPE_BUF,
-					 "PART %s :ii - 500SLOC are too much\r\n", c->name);
-		write(irc, message, strlen(message));
-		close(c->fd);
-		create_filepath(infile, sizeof(infile), c->name, "in");
-		unlink(infile);
-		rm_channel(c);
-		return;
-		break;
-	default:
-		snprintf(message, PIPE_BUF, "%s\r\n", &buf[1]);
-		break;
+			break;
+		default:
+			snprintf(message, PIPE_BUF, "%s\r\n", &buf[1]);
+			break;
 	}
 	write(irc, message, strlen(message));
 }
@@ -316,7 +316,7 @@ static void proc_server_cmd(char *buf)
 	   or NUL or CR or LF, the first of which may not be ':'>
 	   <trailing> ::= <Any, possibly *empty*, sequence of octets not including NUL or CR or LF>
 	   <crlf>     ::= CR LF
-	 */
+	   */
 	if(buf[0] == ':') {		/* check prefix */
 		if (!(p = strchr(buf, ' '))) return;
 		*p = 0;
@@ -356,8 +356,8 @@ static void proc_server_cmd(char *buf)
 	else if(!strncmp("JOIN", argv[TOK_CMD], 5)) {
 		if(argv[TOK_TEXT]!=nil){
 			p = strchr(argv[TOK_TEXT], ' ');
-		if(p)
-			*p = 0;
+			if(p)
+				*p = 0;
 		}
 		argv[TOK_CHAN] = argv[TOK_TEXT];
 		snprintf(message, PIPE_BUF, "-!- %s(%s) has joined %s", argv[TOK_NICKSRV], argv[TOK_USER], argv[TOK_TEXT]);
@@ -451,8 +451,8 @@ static void run()
 			exit(EXIT_FAILURE);
 		} else if(r == 0) {
 			if(time(NULL) - last_response >= PING_TIMEOUT) {
-				    print_out(NULL, "-!- ii shutting down: ping timeout");
-				    exit(EXIT_FAILURE);
+				print_out(NULL, "-!- ii shutting down: ping timeout");
+				exit(EXIT_FAILURE);
 			}
 			write(irc, ping_msg, strlen(ping_msg));
 			continue;
@@ -488,13 +488,13 @@ int main(int argc, char *argv[])
 
 	for(i = 1; (i + 1 < argc) && (argv[i][0] == '-'); i++) {
 		switch (argv[i][1]) {
-		case 'i': snprintf(prefix,sizeof(prefix),"%s", argv[++i]); break;
-		case 's': host = argv[++i]; break;
-		case 'p': port = atoi(argv[++i]); break;
-		case 'n': snprintf(nick,sizeof(nick),"%s", argv[++i]); break;
-		case 'k': key = argv[++i]; break;
-		case 'f': fullname = argv[++i]; break;
-		default: usage(); break;
+			case 'i': snprintf(prefix,sizeof(prefix),"%s", argv[++i]); break;
+			case 's': host = argv[++i]; break;
+			case 'p': port = atoi(argv[++i]); break;
+			case 'n': snprintf(nick,sizeof(nick),"%s", argv[++i]); break;
+			case 'k': key = argv[++i]; break;
+			case 'f': fullname = argv[++i]; break;
+			default: usage(); break;
 		}
 	}
 	irc = tcpopen(port);
