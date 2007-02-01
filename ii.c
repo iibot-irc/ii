@@ -46,8 +46,7 @@ static char nick[32];			/* might change while running */
 static char path[_POSIX_PATH_MAX];
 static char message[PIPE_BUF]; /* message buf used for communication */
 
-static void usage()
-{
+static void usage() {
 	fprintf(stderr, "%s",
 			"ii - irc it - " VERSION "\n"
 			"(C)opyright MMVI Anselm R. Garbe, Nico Golde\n"
@@ -55,17 +54,15 @@ static void usage()
 			"          [-n <nick>] [-k <password>] [-f <fullname>]\n");
 	exit(EXIT_SUCCESS);
 }
-static char *lower(char *s)
-{
+static char *lower(char *s) {
 	char *p; for(p = s; p && *p; p++) *p = tolower(*p);
 	return s;
 }
 
 /* creates directories top-down, if necessary */
-static void create_dirtree(const char *dir)
-{
+static void create_dirtree(const char *dir) {
 	char tmp[256];
-	char *p;
+	char *p=nil;
 	size_t len;
 
 	snprintf(tmp, sizeof(tmp),"%s",dir);
@@ -81,8 +78,7 @@ static void create_dirtree(const char *dir)
 	mkdir(tmp, S_IRWXU);
 }
 
-static int get_filepath(char *filepath, size_t len, char *channel, char *file)
-{
+static int get_filepath(char *filepath, size_t len, char *channel, char *file) {
 	if(channel) {
 		if(!snprintf(filepath, len, "%s/%s", path, lower(channel)))
 			return 0;
@@ -92,16 +88,14 @@ static int get_filepath(char *filepath, size_t len, char *channel, char *file)
 	return snprintf(filepath, len, "%s/%s", path, file);
 }
 
-static void create_filepath(char *filepath, size_t len, char *channel, char *suffix)
-{
+static void create_filepath(char *filepath, size_t len, char *channel, char *suffix) {
 	if(!get_filepath(filepath, len, channel, suffix)) {
 		fprintf(stderr, "%s", "ii: path to irc directory too long\n");
 		exit(EXIT_FAILURE);
 	}
 }
 
-static int open_channel(char *name)
-{
+static int open_channel(char *name) {
 	static char infile[256];
 	create_filepath(infile, sizeof(infile), name, "in");
 	if(access(infile, F_OK) == -1)
@@ -138,8 +132,7 @@ static void add_channel(char *name)
 	c->name = strdup(name);
 }
 
-static void rm_channel(Channel *c)
-{
+static void rm_channel(Channel *c) {
 	Channel *p;
 	if(channels == c)
 		channels = channels->next;
@@ -152,8 +145,7 @@ static void rm_channel(Channel *c)
 	free(c);
 }
 
-static void login(char *key, char *fullname)
-{
+static void login(char *key, char *fullname) {
 	if(key)
 		snprintf(message, PIPE_BUF,
 				"PASS %s\r\nNICK %s\r\nUSER %s localhost %s :%s\r\n", key,
@@ -164,8 +156,7 @@ static void login(char *key, char *fullname)
 	write(irc, message, strlen(message));	/* login */
 }
 
-static int tcpopen(unsigned short port)
-{
+static int tcpopen(unsigned short port) {
 	int fd;
 	struct sockaddr_in sin;
 	struct hostent *hp = gethostbyname(host);
@@ -189,8 +180,7 @@ static int tcpopen(unsigned short port)
 	return fd;
 }
 
-static size_t tokenize(char **result, size_t reslen, char *str, char delim)
-{
+static size_t tokenize(char **result, size_t reslen, char *str, char delim) {
 	char *p, *n;
 	size_t i;
 
@@ -227,16 +217,14 @@ static void print_out(char *channel, char *buf)
 	fclose(out);
 }
 
-static void proc_channels_privmsg(char *channel, char *buf)
-{
+static void proc_channels_privmsg(char *channel, char *buf) {
 	snprintf(message, PIPE_BUF, "<%s> %s", nick, buf);
 	print_out(channel, message);
 	snprintf(message, PIPE_BUF, "PRIVMSG %s :%s\r\n", channel, buf);
 	write(irc, message, strlen(message));
 }
 
-static void proc_channels_input(Channel *c, char *buf)
-{
+static void proc_channels_input(Channel *c, char *buf) {
 	static char infile[256];
 	char *p;
 	if(buf[0] != '/' && buf[0] != 0) {
@@ -296,8 +284,7 @@ static void proc_channels_input(Channel *c, char *buf)
 	write(irc, message, strlen(message));
 }
 
-static void proc_server_cmd(char *buf)
-{
+static void proc_server_cmd(char *buf) {
 	char *argv[TOK_LAST], *cmd, *p;
 	int i;
 	if(!buf || *buf=='\0')
@@ -383,8 +370,7 @@ static void proc_server_cmd(char *buf)
 		print_out(argv[TOK_CHAN], message);
 }
 
-static int read_line(int fd, size_t res_len, char *buf)
-{
+static int read_line(int fd, size_t res_len, char *buf) {
 	size_t i = 0;
 	char c;
 	do {
@@ -397,8 +383,7 @@ static int read_line(int fd, size_t res_len, char *buf)
 	return 0;
 }
 
-static void handle_channels_input(Channel *c)
-{
+static void handle_channels_input(Channel *c) {
 	static char buf[PIPE_BUF];
 	if(read_line(c->fd, PIPE_BUF, buf) == -1) {
 		close(c->fd);
@@ -412,8 +397,7 @@ static void handle_channels_input(Channel *c)
 	proc_channels_input(c, buf);
 }
 
-static void handle_server_output()
-{
+static void handle_server_output() {
 	static char buf[PIPE_BUF];
 	if(read_line(irc, PIPE_BUF, buf) == -1) {
 		perror("ii: remote host closed connection");
@@ -422,8 +406,7 @@ static void handle_server_output()
 	proc_server_cmd(buf);
 }
 
-static void run()
-{
+static void run() {
 	Channel *c;
 	int r, maxfd;
 	fd_set rd;
@@ -467,8 +450,7 @@ static void run()
 	}
 }
 
-int main(int argc, char *argv[])
-{
+int main(int argc, char *argv[]) {
 	int i;
 	unsigned short port = 6667;
 	struct passwd *spw = getpwuid(getuid());
