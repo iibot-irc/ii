@@ -231,6 +231,7 @@ static void proc_channels_input(Channel *c, char *buf) {
 		proc_channels_privmsg(c->name, buf);
 		return;
 	}
+	message[0] = '\0';
 	switch (buf[1]) {
 		case 'j':
 			p = strchr(&buf[3], ' ');
@@ -248,24 +249,28 @@ static void proc_channels_input(Channel *c, char *buf) {
 			}
 			break;
 		case 't':
-			snprintf(message, PIPE_BUF, "TOPIC %s :%s\r\n", c->name, &buf[3]);
+			if(strlen(buf)>=3) snprintf(message, PIPE_BUF, "TOPIC %s :%s\r\n", c->name, &buf[3]);
 			break;
 		case 'a':
-			snprintf(message, PIPE_BUF, "-!- %s is away \"%s\"", nick, &buf[3]);
-			print_out(c->name, message);
-			if(buf[2] == 0)
+			if(strlen(buf)>=3){
+				snprintf(message, PIPE_BUF, "-!- %s is away \"%s\"", nick, &buf[3]);
+				print_out(c->name, message);
+			}
+			if(buf[2] == 0 || strlen(buf)<3) /* or used to make else part safe */
 				snprintf(message, PIPE_BUF, "AWAY\r\n");
 			else
 				snprintf(message, PIPE_BUF, "AWAY :%s\r\n", &buf[3]);
 			break;
 		case 'n':
-			snprintf(nick, sizeof(nick),"%s", &buf[3]);
-			snprintf(message, PIPE_BUF, "NICK %s\r\n", &buf[3]);
+			if(strlen(buf)>=3){
+				snprintf(nick, sizeof(nick),"%s", &buf[3]);
+				snprintf(message, PIPE_BUF, "NICK %s\r\n", &buf[3]);
+			}
 			break;
 		case 'l':
 			if(c->name[0] == 0)
 				return;
-			if(buf[2] == ' ')
+			if(buf[2] == ' ' && strlen(buf)>=3)
 				snprintf(message, PIPE_BUF, "PART %s :%s\r\n", c->name, &buf[3]);
 			else
 				snprintf(message, PIPE_BUF,
@@ -281,7 +286,8 @@ static void proc_channels_input(Channel *c, char *buf) {
 			snprintf(message, PIPE_BUF, "%s\r\n", &buf[1]);
 			break;
 	}
-	write(irc, message, strlen(message));
+	if (message[0] != '\0')
+		write(irc, message, strlen(message));
 }
 
 static void proc_server_cmd(char *buf) {
