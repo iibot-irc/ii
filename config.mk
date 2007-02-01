@@ -15,8 +15,9 @@ VERSION     = 1
 # includes and libs
 INCLUDES    = -I. -I${INCDIR} -I/usr/include
 LIBS        = -L${LIBDIR} -L/usr/lib -lc
-# uncomment for compiling on Solaris
-# LIBS = -L${LIBDIR} -L/usr/lib -lc -lsocket -lnsl
+# uncomment and comment other variables for compiling on Solaris
+#LIBS = -L${LIBDIR} -L/usr/lib -lc -lsocket -lnsl
+#CFLAGS      = -g ${INCLUDES} -DVERSION=\"${VERSION}\"
 
 # compiler
 CC          = cc
