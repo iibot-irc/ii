@@ -1,4 +1,5 @@
 FAQ
+===
 
 Where is IRC command xy (ignore etc.)?
 --------------------------------------
@@ -10,10 +11,11 @@ Where is a graphical interface?
 Basically ii follows the UNIX philosophy so it is only file based. But it
 should be easy to build different interface because they only have to handle
 the FIFOs and output files. Feel free to implement or wait until we have done
-this.
+this. Actually I use ii in combination with vim, multitail and screen and it works
+like a charm.
 
 Which commands are supported?
  -----------------------------
-j (join), t (topic), a (away), m (msg), n (nick), l (leave). The missing are
+j (join or msg), t (topic), a (away), n (nick), l (leave). The missing are
 obsolete or can be easily used by typing the IRC commands itself (i.e. /WHO
 instead of /who).

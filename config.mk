@@ -10,11 +10,13 @@ DESTDIR     =
 
 INCDIR      = ${PREFIX}/include
 LIBDIR      = ${PREFIX}/lib
-VERSION     = 1-rc2
+VERSION     = 1
 
 # includes and libs
 INCLUDES    = -I. -I${INCDIR} -I/usr/include
 LIBS        = -L${LIBDIR} -L/usr/lib -lc
+# uncomment for compiling on Solaris
+# LIBS = -L${LIBDIR} -L/usr/lib -lc -lsocket -lnsl
 
 # compiler
 CC          = cc

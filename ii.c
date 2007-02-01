@@ -49,7 +49,7 @@ static char message[PIPE_BUF]; /* message buf used for communication */
 static void usage() {
 	fprintf(stderr, "%s",
 			"ii - irc it - " VERSION "\n"
-			"(C)opyright MMVI Anselm R. Garbe, Nico Golde\n"
+			"(C)opyright MMV-MMVII Anselm R. Garbe, Nico Golde\n"
 			"usage: ii [-i <irc dir>] [-s <host>] [-p <port>]\n"
 			"          [-n <nick>] [-k <password>] [-f <fullname>]\n");
 	exit(EXIT_SUCCESS);

@@ -44,7 +44,7 @@ lets you override the default servername (irc.freenode.net)
 lets you override the default port (6667)
 .TP
 .BI \-k " password"
-lets you use a password to authentifacte your nick on the server
+lets you use a password to authenticate your nick on the server
 .TP
 .BI \-i " prefix"
 lets you override the default irc path (~/irc)
@@ -66,11 +66,11 @@ will be created in the ~/irc/$servername/ directory.
 
 .SH COMMANDS
 .TP
-.FN /j " #channel/nickname"
+.FN /j " #channel/nickname [<message>]"
 join a channel or open private conversation with user
 .TP
-.FN /l " #channel"
-leave a channel
+.FN /l " #channel/nickname"
+leave a channel or query
 .TP
 .FN /n " nick"
 change the nick name
@@ -79,6 +79,7 @@ change the nick name
 set the topic of a channel
 .TP
 Everything which is not a command will simply be posted into the channel or to the server.
+So if you need /who just write /WHO as described in the RFC to the server in FIFO.
 .TP
 .FH out file usage
 Write wrappers, pagers or use your tools of choice to display the out file contents (loco, multitail, etc.). 
@@ -86,7 +87,7 @@ Write wrappers, pagers or use your tools of choice to display the out file conte
 .TP
 Write to ii (at) modprobe (dot) de for suggestions, fixes, 7|-|>< ;) etc.
 .SH AUTHORS
-Copyright \(co 2005 by Anselm R. Garbe <garbeam (at) gmail (dot) com> and Nico Golde <nico (at) ngolde (dot) de>
+Copyright \(co 2005-2007 by Anselm R. Garbe <garbeam (at) gmail (dot) com> and Nico Golde <nico (at) ngolde (dot) de>
 .SH SEE ALSO
 .BR echo (1),
 .BR tail (1),

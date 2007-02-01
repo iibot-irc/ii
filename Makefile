@@ -1,5 +1,5 @@
 # ii - irc it - simple but flexible IRC client
-#   (C)opyright MMV Anselm R. Garbe, Nico Golde
+#   (C)opyright MMV-MMVII Anselm R. Garbe, Nico Golde
 
 include config.mk
 
