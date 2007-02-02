@@ -274,7 +274,7 @@ static void proc_channels_input(Channel *c, char *buf) {
 				snprintf(message, PIPE_BUF, "PART %s :%s\r\n", c->name, &buf[3]);
 			else
 				snprintf(message, PIPE_BUF,
-						"PART %s :ii - 500SLOC are too much\r\n", c->name);
+						"PART %s :ii - 500 LOC are too much\r\n", c->name);
 			write(irc, message, strlen(message));
 			close(c->fd);
 			create_filepath(infile, sizeof(infile), c->name, "in");
