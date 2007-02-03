@@ -21,9 +21,6 @@
 #include <time.h>
 #include <unistd.h>
 
-#ifndef nil
-#define nil NULL /* for those who don't understand, nil is used in Plan9 */
-#endif
 #ifndef PIPE_BUF /* FreeBSD don't know PIPE_BUF */
 #define PIPE_BUF 4096
 #endif
@@ -41,7 +38,7 @@ struct Channel {
 #define SERVER_PORT 6667
 static int irc;
 static time_t last_response;
-static Channel *channels = nil;
+static Channel *channels = NULL;
 static char *host = "irc.freenode.net";
 static char nick[32];			/* might change while running */
 static char path[_POSIX_PATH_MAX];
@@ -56,14 +53,15 @@ static void usage() {
 	exit(EXIT_SUCCESS);
 }
 static char *lower(char *s) {
-	char *p; for(p = s; p && *p; p++) *p = tolower(*p);
+	char *p;
+	for(p = s; p && *p; p++) *p = tolower(*p);
 	return s;
 }
 
 /* creates directories top-down, if necessary */
 static void create_dirtree(const char *dir) {
 	char tmp[256];
-	char *p=nil;
+	char *p = NULL;
 	size_t len;
 
 	snprintf(tmp, sizeof(tmp),"%s",dir);
@@ -163,7 +161,7 @@ static int tcpopen(unsigned short port) {
 	struct hostent *hp = gethostbyname(host);
 
 	memset(&sin, 0, sizeof(struct sockaddr_in));
-	if(hp == nil) {
+	if(!hp) {
 		perror("ii: cannot retrieve host information");
 		exit(EXIT_FAILURE);
 	}
@@ -227,7 +225,7 @@ static void proc_channels_privmsg(char *channel, char *buf) {
 
 static void proc_channels_input(Channel *c, char *buf) {
 	static char infile[256];
-	char *p;
+	char *p = NULL;
 	if(buf[0] != '/' && buf[0] != 0) {
 		proc_channels_privmsg(c->name, buf);
 		return;
@@ -292,13 +290,13 @@ static void proc_channels_input(Channel *c, char *buf) {
 }
 
 static void proc_server_cmd(char *buf) {
-	char *argv[TOK_LAST], *cmd, *p;
+	char *argv[TOK_LAST], *cmd = NULL, *p = NULL;
 	int i;
 	if(!buf || *buf=='\0')
 		return;
 
 	for(i = 0; i < TOK_LAST; i++)
-		argv[i] = nil;
+		argv[i] = NULL;
 
 	/*
 	   <message>  ::= [':' <prefix> <SPACE> ] <command> <params> <crlf>
@@ -348,7 +346,7 @@ static void proc_server_cmd(char *buf) {
 	} else if(!strncmp("ERROR", argv[TOK_CMD], 6))
 		snprintf(message, PIPE_BUF, "-!- error %s", argv[TOK_TEXT] ? argv[TOK_TEXT] : "unknown");
 	else if(!strncmp("JOIN", argv[TOK_CMD], 5)) {
-		if(argv[TOK_TEXT]!=nil){
+		if(argv[TOK_TEXT] != NULL){
 			p = strchr(argv[TOK_TEXT], ' ');
 			if(p)
 				*p = 0;
@@ -461,9 +459,9 @@ int main(int argc, char *argv[]) {
 	int i;
 	unsigned short port = SERVER_PORT;
 	struct passwd *spw = getpwuid(getuid());
-	char *key = nil;
+	char *key = NULL;
 	char prefix[_POSIX_PATH_MAX];
-	char *fullname = nil;
+	char *fullname = NULL;
 
 	if(!spw) {
 		fprintf(stderr,"ii: getpwuid() failed\n"); 
