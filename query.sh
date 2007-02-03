@@ -22,7 +22,6 @@ do
         if [ $? -ne 1 ]; then
             echo -e "new data in: $i\n========================================================"
             tail -5 $i
-            read
         fi
     fi
 done
