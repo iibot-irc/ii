@@ -45,9 +45,10 @@ install: all
 	@echo "installed ii"
 
 uninstall: all
-	rm -f ${DESTDIR}${MAN1DIR}/ii.1
-	rm -rf ${DESTDIR}${DOCDIR}
-	rm -f ${DESTDIR}${BINDIR}/ii
+	@rm -f ${DESTDIR}${MAN1DIR}/ii.1
+	@rm -rf ${DESTDIR}${DOCDIR}
+	@rm -f ${DESTDIR}${BINDIR}/ii
+	@echo "uninstalled ii"
 
 clean:
 	rm -f ii *~ *.o *core
