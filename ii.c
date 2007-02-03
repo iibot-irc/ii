@@ -37,8 +37,9 @@ struct Channel {
 	Channel *next;
 };
 
-static int irc;
 #define PING_TIMEOUT 300
+#define SERVER_PORT 6667
+static int irc;
 static time_t last_response;
 static Channel *channels = nil;
 static char *host = "irc.freenode.net";
@@ -458,7 +459,7 @@ static void run() {
 
 int main(int argc, char *argv[]) {
 	int i;
-	unsigned short port = 6667;
+	unsigned short port = SERVER_PORT;
 	struct passwd *spw = getpwuid(getuid());
 	char *key = nil;
 	char prefix[_POSIX_PATH_MAX];
@@ -470,9 +471,7 @@ int main(int argc, char *argv[]) {
 	}
 	snprintf(nick, sizeof(nick), "%s", spw->pw_name);
 	snprintf(prefix, sizeof(prefix),"%s/irc", spw->pw_dir);
-
-	if(argc == 2 && argv[1][0] == '-' && argv[1][1] == 'h')
-		usage();
+	if (argc <= 1 || (argc == 2 && argv[1][0] == '-' && argv[1][1] == 'h')) usage();
 
 	for(i = 1; (i + 1 < argc) && (argv[i][0] == '-'); i++) {
 		switch (argv[i][1]) {
