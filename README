@@ -6,11 +6,11 @@ nick name directories.
 In every directory a FIFO file (in) and and normal file (out)
 is placed.
 The in file is used to communicate with the servers and the out
-files includes the server messages. For every channel and every nick
+files include the server messages. For every channel and every nick
 name there will be new in and out files.
 The basic idea of this is to be able to communicate with an IRC
-server with basic command line tools.
-For example if you will join a channel just do echo "/j #channel" > in
+server with standard command line tools.
+For example if you want to join a channel just do echo "/j #channel" > in
 and ii creates a new channel directory with in and out file.
 
 Installation
@@ -36,6 +36,8 @@ to post to channels.
 If you use the next editor line for a new posting you can use ctrl-p for nick
 completion if you wrote the nick in the past.
 Thanks to Matthias Kopfermann for this hint.
+You can find an example of how this nested environment could look like on:
+http://nion.modprobe.de/blog/archives/440-Using-the-ii-irc-client.html
 
 Configuration
 -------------
