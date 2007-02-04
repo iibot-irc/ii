@@ -377,7 +377,7 @@ static void proc_server_cmd(char *buf) {
 
 static int read_line(int fd, size_t res_len, char *buf) {
 	size_t i = 0;
-	char c;
+	char c = 0;
 	do {
 		if(read(fd, &c, sizeof(char)) != sizeof(char))
 			return -1;
