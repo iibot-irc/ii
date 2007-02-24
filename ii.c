@@ -190,6 +190,7 @@ static size_t tokenize(char **result, size_t reslen, char *str, char delim) {
 	for(i = 0; *n != 0;) {
 		if(i == reslen)
 			return 0;
+		if(i > TOK_CHAN - TOK_CMD && strtol(result[0], NULL, 10) > 0) delim=':'; /* workaround non-RFC compliant messages */
 		if(*n == delim) {
 			*n = 0;
 			result[i++] = p;
@@ -226,6 +227,7 @@ static void proc_channels_privmsg(char *channel, char *buf) {
 static void proc_channels_input(Channel *c, char *buf) {
 	static char infile[256];
 	char *p = NULL;
+
 	if(buf[0] != '/' && buf[0] != 0) {
 		proc_channels_privmsg(c->name, buf);
 		return;
@@ -292,12 +294,12 @@ static void proc_channels_input(Channel *c, char *buf) {
 static void proc_server_cmd(char *buf) {
 	char *argv[TOK_LAST], *cmd = NULL, *p = NULL;
 	int i;
+
 	if(!buf || *buf=='\0')
 		return;
 
 	for(i = 0; i < TOK_LAST; i++)
 		argv[i] = NULL;
-
 	/*
 	   <message>  ::= [':' <prefix> <SPACE> ] <command> <params> <crlf>
 	   <prefix>   ::= <servername> | <nick> [ '!' <user> ] [ '@' <host> ]
@@ -331,6 +333,7 @@ static void proc_server_cmd(char *buf) {
 		*p = 0;
 		argv[TOK_TEXT] = ++p;
 	}
+
 	tokenize(&argv[TOK_CMD], TOK_LAST - TOK_CMD, cmd, ' ');
 
 	if(!argv[TOK_CMD] || !strncmp("PONG", argv[TOK_CMD], 5)) {
@@ -340,7 +343,7 @@ static void proc_server_cmd(char *buf) {
 		write(irc, message, strlen(message));
 		return;
 	} else if(!argv[TOK_NICKSRV] || !argv[TOK_USER]) {	/* server command */
-		snprintf(message, PIPE_BUF, "%s", argv[TOK_TEXT] ? argv[TOK_TEXT] : "");
+		snprintf(message, PIPE_BUF, "%s%s", argv[TOK_ARG] ? argv[TOK_ARG] : "", argv[TOK_TEXT] ? argv[TOK_TEXT] : "");
 		print_out(0, message);
 		return;
 	} else if(!strncmp("ERROR", argv[TOK_CMD], 6))
@@ -464,7 +467,7 @@ int main(int argc, char *argv[]) {
 	char *fullname = NULL;
 
 	if(!spw) {
-		fprintf(stderr,"ii: getpwuid() failed\n"); 
+		fprintf(stderr,"ii: getpwuid() failed\n");
 		exit(EXIT_FAILURE);
 	}
 	snprintf(nick, sizeof(nick), "%s", spw->pw_name);
@@ -475,7 +478,7 @@ int main(int argc, char *argv[]) {
 		switch (argv[i][1]) {
 			case 'i': snprintf(prefix,sizeof(prefix),"%s", argv[++i]); break;
 			case 's': host = argv[++i]; break;
-			case 'p': port = atoi(argv[++i]); break;
+			case 'p': port = strtol(argv[++i], NULL, 10); break;
 			case 'n': snprintf(nick,sizeof(nick),"%s", argv[++i]); break;
 			case 'k': key = argv[++i]; break;
 			case 'f': fullname = argv[++i]; break;
