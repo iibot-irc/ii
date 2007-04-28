@@ -1,6 +1,6 @@
 /*
  * (C)opyright MMV-MMVI Anselm R. Garbe <garbeam at gmail dot com>
- * (C)opyright MMV-MMVI Nico Golde <nico at ngolde dot de>
+ * (C)opyright MMV-MMVII Nico Golde <nico at ngolde dot de>
  * See LICENSE file for license details.
  */
 
@@ -47,7 +47,8 @@ static char message[PIPE_BUF]; /* message buf used for communication */
 static void usage() {
 	fprintf(stderr, "%s",
 			"ii - irc it - " VERSION "\n"
-			"(C)opyright MMV-MMVII Anselm R. Garbe, Nico Golde\n"
+			"(C)opyright MMV-MMVI Anselm R. Garbe\n"
+			"(C)opyright MMV-MMVII Nico Golde\n"
 			"usage: ii [-i <irc dir>] [-s <host>] [-p <port>]\n"
 			"          [-n <nick>] [-k <password>] [-f <fullname>]\n");
 	exit(EXIT_SUCCESS);
