@@ -3,7 +3,6 @@
  * (C)opyright MMV-MMVII Nico Golde <nico at ngolde dot de>
  * See LICENSE file for license details.
  */
-
 #include <errno.h>
 #include <netdb.h>
 #include <sys/types.h>
@@ -103,8 +102,7 @@ static int open_channel(char *name) {
 	return open(infile, O_RDONLY | O_NONBLOCK, 0);
 }
 
-static void add_channel(char *name)
-{
+static void add_channel(char *name) {
 	Channel *c;
 	int fd;
 
@@ -114,8 +112,8 @@ static void add_channel(char *name)
 
 	fd = open_channel(name);
 	if(fd == -1) {
-		perror("ii: cannot create in channel");
-		return;
+		printf("ii: exiting, cannot create in channel: %s\n", name);
+		exit(EXIT_FAILURE);
 	}
 	c = calloc(1, sizeof(Channel));
 	if(!c) {
