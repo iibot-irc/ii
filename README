@@ -43,6 +43,12 @@ Configuration
 -------------
 No configuration is needed.
 
+Changelog
+---------
+Since I missed the chance to add a proper changelog right from the beginning,
+please have a look at the commit messages on http://www.suckless.org/hg.rc/ii
+they are fairly descriptive.
+
 Contact
 -------
 If you want to contact the developers just write a mail to
