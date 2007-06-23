@@ -24,7 +24,7 @@ options:
 
 dist: clean
 	@mkdir -p ii-${VERSION}
-	@cp -R query.sh Makefile README FAQ LICENSE config.mk ii.c ii.1 ii-${VERSION}
+	@cp -R query.sh Makefile CHANGES README FAQ LICENSE config.mk ii.c ii.1 ii-${VERSION}
 	@tar -cf ii-${VERSION}.tar ii-${VERSION}
 	@gzip ii-${VERSION}.tar
 	@rm -rf ii-${VERSION}
@@ -40,7 +40,7 @@ install: all
 	@mkdir -p ${DESTDIR}${MAN1DIR}
 
 	@install -d ${DESTDIR}${BINDIR} ${DESTDIR}${MAN1DIR}
-	@install -m 644 README query.sh FAQ LICENSE ${DESTDIR}${DOCDIR}
+	@install -m 644 CHANGES README query.sh FAQ LICENSE ${DESTDIR}${DOCDIR}
 	@install -m 775 ii ${DESTDIR}${BINDIR}
 	@install -m 444 ii.1 ${DESTDIR}${MAN1DIR}
 	@echo "installed ii"
@@ -52,4 +52,4 @@ uninstall: all
 	@echo "uninstalled ii"
 
 clean:
-	rm -f ii *~ *.o *core
+	rm -f ii *~ *.o *core *.tar.gz

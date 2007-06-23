@@ -53,7 +53,7 @@ static void usage() {
 	exit(EXIT_SUCCESS);
 }
 static char *lower(char *s) {
-	char *p;
+	char *p = NULL;
 	for(p = s; p && *p; p++) *p = tolower(*p);
 	return s;
 }
@@ -120,8 +120,7 @@ static void add_channel(char *name) {
 		perror("ii: cannot allocate memory");
 		exit(EXIT_FAILURE);
 	}
-	if(!channels)
-		channels = c;
+	if(!channels) channels = c;
 	else {
 		c->next = channels;
 		channels = c;
@@ -132,8 +131,7 @@ static void add_channel(char *name) {
 
 static void rm_channel(Channel *c) {
 	Channel *p;
-	if(channels == c)
-		channels = channels->next;
+	if(channels == c) channels = channels->next;
 	else {
 		for(p = channels; p && p->next != c; p = p->next);
 		if(p->next == c)
@@ -144,13 +142,12 @@ static void rm_channel(Channel *c) {
 }
 
 static void login(char *key, char *fullname) {
-	if(key)
-		snprintf(message, PIPE_BUF,
+	if(key) snprintf(message, PIPE_BUF,
 				"PASS %s\r\nNICK %s\r\nUSER %s localhost %s :%s\r\n", key,
 				nick, nick, host, fullname ? fullname : nick);
-	else
-		snprintf(message, PIPE_BUF, "NICK %s\r\nUSER %s localhost %s :%s\r\n",
+	else snprintf(message, PIPE_BUF, "NICK %s\r\nUSER %s localhost %s :%s\r\n",
 				nick, nick, host, fullname ? fullname : nick);
+
 	write(irc, message, strlen(message));	/* login */
 }
 
@@ -179,7 +176,7 @@ static int tcpopen(unsigned short port) {
 }
 
 static size_t tokenize(char **result, size_t reslen, char *str, char delim) {
-	char *p, *n;
+	char *p = NULL, *n = NULL;
 	size_t i;
 
 	if(!str)
@@ -202,8 +199,7 @@ static size_t tokenize(char **result, size_t reslen, char *str, char delim) {
 	return i;				/* number of tokens */
 }
 
-static void print_out(char *channel, char *buf)
-{
+static void print_out(char *channel, char *buf) {
 	static char outfile[256];
 	FILE *out;
 	static char buft[18];
@@ -211,6 +207,7 @@ static void print_out(char *channel, char *buf)
 
 	create_filepath(outfile, sizeof(outfile), channel, "out");
 	if(!(out = fopen(outfile, "a"))) return;
+
 	strftime(buft, sizeof(buft), "%F %R", localtime(&t));
 	fprintf(out, "%s %s\n", buft, buf);
 	fclose(out);
@@ -237,7 +234,7 @@ static void proc_channels_input(Channel *c, char *buf) {
 			p = strchr(&buf[3], ' ');
 			if(p) *p = 0;
 			if((buf[3]=='#')||(buf[3]=='&')||(buf[3]=='+')||(buf[3]=='!')){
-				if(p) snprintf(message, PIPE_BUF, "JOIN %s %s\r\n", &buf[3], p + 1);
+				if(p) snprintf(message, PIPE_BUF, "JOIN %s %s\r\n", &buf[3], p + 1); /* password protected channel */
 				else snprintf(message, PIPE_BUF, "JOIN %s\r\n", &buf[3]);
 				add_channel(&buf[3]);
 			}
@@ -275,7 +272,7 @@ static void proc_channels_input(Channel *c, char *buf) {
 				snprintf(message, PIPE_BUF, "PART %s :%s\r\n", c->name, &buf[3]);
 			else
 				snprintf(message, PIPE_BUF,
-						"PART %s :ii - 500 LOC are too much\r\n", c->name);
+						"PART %s :ii - 500 SLOC are too much\r\n", c->name);
 			write(irc, message, strlen(message));
 			close(c->fd);
 			create_filepath(infile, sizeof(infile), c->name, "in");
