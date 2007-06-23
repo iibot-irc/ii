@@ -1,0 +1,4 @@
+1.2 (2007-06-23):
+    - Exit on channel creation failure, thanks Michael Prokop
+    - Implemented joining of password protected channels
+    - Removed -v option from the manpage since it's not implemented
