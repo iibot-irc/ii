@@ -201,10 +201,13 @@ static size_t tokenize(char **result, size_t reslen, char *str, char delim) {
 
 static void print_out(char *channel, char *buf) {
 	static char outfile[256];
+	static char server[256];
 	FILE *out;
 	static char buft[18];
 	time_t t = time(0);
 
+	snprintf(server, sizeof(server), "-!- %s", channel);
+	if(strstr(buf, server)) channel="";
 	create_filepath(outfile, sizeof(outfile), channel, "out");
 	if(!(out = fopen(outfile, "a"))) return;
 

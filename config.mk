@@ -23,5 +23,5 @@ LIBS        = -L${LIBDIR} -L/usr/lib -lc
 
 # compiler
 CC          = cc
-CFLAGS      = -g -O0 -W -Wall ${INCLUDES} -DVERSION=\"${VERSION}\"
+CFLAGS      = -g -O0 -W -Wall -Wextra ${INCLUDES} -DVERSION=\"${VERSION}\"
 LDFLAGS     = ${LIBS}
