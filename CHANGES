@@ -1,4 +1,4 @@
-1.3 (xxxx-xx-xx):
+1.3 (2007-07-14):
     - server messages about users (QUIT,JOIN) will no longer
       go to the user directories but to the server out file to
       give an easy method to monitor it and to prevent spamming
