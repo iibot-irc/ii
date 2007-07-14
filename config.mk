@@ -12,7 +12,7 @@ DESTDIR     =
 
 INCDIR      = ${PREFIX}/include
 LIBDIR      = ${PREFIX}/lib
-VERSION     = 1.2
+VERSION     = 1.3
 
 # includes and libs
 INCLUDES    = -I. -I${INCDIR} -I/usr/include
@@ -23,5 +23,5 @@ LIBS        = -L${LIBDIR} -L/usr/lib -lc
 
 # compiler
 CC          = cc
-CFLAGS      = -g -O0 -W -Wall -Wextra ${INCLUDES} -DVERSION=\"${VERSION}\"
+CFLAGS      = -g -O0 -W -Wall ${INCLUDES} -DVERSION=\"${VERSION}\"
 LDFLAGS     = ${LIBS}
