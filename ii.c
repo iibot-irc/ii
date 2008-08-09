@@ -52,9 +52,12 @@ static void usage() {
 			"          [-n <nick>] [-k <password>] [-f <fullname>]\n");
 	exit(EXIT_SUCCESS);
 }
-static char *lower(char *s) {
+static char *striplower(char *s) {
 	char *p = NULL;
-	for(p = s; p && *p; p++) *p = tolower(*p);
+	for(p = s; p && *p; p++) {
+		if(*p == '/') *p = '_';
+		*p = tolower(*p);
+	}
 	return s;
 }
 
@@ -79,10 +82,10 @@ static void create_dirtree(const char *dir) {
 
 static int get_filepath(char *filepath, size_t len, char *channel, char *file) {
 	if(channel) {
-		if(!snprintf(filepath, len, "%s/%s", path, lower(channel)))
+		if(!snprintf(filepath, len, "%s/%s", path, striplower(channel)))
 			return 0;
 		create_dirtree(filepath);
-		return snprintf(filepath, len, "%s/%s/%s", path,lower(channel), file);
+		return snprintf(filepath, len, "%s/%s/%s", path, striplower(channel), file);
 	}
 	return snprintf(filepath, len, "%s/%s", path, file);
 }
@@ -200,10 +203,8 @@ static size_t tokenize(char **result, size_t reslen, char *str, char delim) {
 }
 
 static void print_out(char *channel, char *buf) {
-	static char outfile[256];
-	static char server[256];
-	FILE *out;
-	static char buft[18];
+	static char outfile[256], server[256], buft[18];
+	FILE *out = NULL;
 	time_t t = time(0);
 
 	if(channel) snprintf(server, sizeof(server), "-!- %s", channel);
@@ -300,8 +301,7 @@ static void proc_server_cmd(char *buf) {
 
 	for(i = 0; i < TOK_LAST; i++)
 		argv[i] = NULL;
-	/*
-	   <message>  ::= [':' <prefix> <SPACE> ] <command> <params> <crlf>
+	/* <message>  ::= [':' <prefix> <SPACE> ] <command> <params> <crlf>
 	   <prefix>   ::= <servername> | <nick> [ '!' <user> ] [ '@' <host> ]
 	   <command>  ::= <letter> { <letter> } | <number> <number> <number>
 	   <SPACE>    ::= ' ' { ' ' }
@@ -309,8 +309,8 @@ static void proc_server_cmd(char *buf) {
 	   <middle>   ::= <Any *non-empty* sequence of octets not including SPACE
 	   or NUL or CR or LF, the first of which may not be ':'>
 	   <trailing> ::= <Any, possibly *empty*, sequence of octets not including NUL or CR or LF>
-	   <crlf>     ::= CR LF
-	   */
+	   <crlf>     ::= CR LF */
+
 	if(buf[0] == ':') {		/* check prefix */
 		if (!(p = strchr(buf, ' '))) return;
 		*p = 0;
@@ -462,9 +462,8 @@ int main(int argc, char *argv[]) {
 	int i;
 	unsigned short port = SERVER_PORT;
 	struct passwd *spw = getpwuid(getuid());
-	char *key = NULL;
+	char *key = NULL, *fullname = NULL;
 	char prefix[_POSIX_PATH_MAX];
-	char *fullname = NULL;
 
 	if(!spw) {
 		fprintf(stderr,"ii: getpwuid() failed\n");

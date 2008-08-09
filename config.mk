@@ -12,7 +12,7 @@ DESTDIR     =
 
 INCDIR      = ${PREFIX}/include
 LIBDIR      = ${PREFIX}/lib
-VERSION     = 1.3
+VERSION     = 1.4
 
 # includes and libs
 INCLUDES    = -I. -I${INCDIR} -I/usr/include

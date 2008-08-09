@@ -1,17 +1,17 @@
 Abstract
 --------
-ii is a minimalistic FIFO and filesystem based IRC client.
-It creates an irc directory tree with server, channel and
-nick name directories.
-In every directory a FIFO file (in) and and normal file (out)
-is placed.
-The in file is used to communicate with the servers and the out
-files include the server messages. For every channel and every nick
-name there will be new in and out files.
-The basic idea of this is to be able to communicate with an IRC
-server with standard command line tools.
-For example if you want to join a channel just do echo "/j #channel" > in
-and ii creates a new channel directory with in and out file.
+ii is a minimalistic FIFO and filesystem based IRC client.  It creates an irc
+directory tree with server, channel and nick name directories.  In every
+directory a FIFO file (in) and and normal file (out) is placed.
+
+The in file is used to communicate with the servers and the out files include
+the server messages. For every channel and every nick name there will be new in
+and out files.
+
+The basic idea of this is to be able to communicate with an IRC server with
+standard command line tools.  For example if you want to join a channel just do
+echo "/j #channel" > in and ii creates a new channel directory with in and out
+file.
 
 Installation
 ------------
@@ -32,10 +32,12 @@ program and for example with vim. Run vim in the server directory and use
 key mapping like:
 map w1 :.w >> \#ii/in<cr>
 map w2 :.w >> \#wmii/in<cr>
-to post to channels. 
+to post to channels.
+
 If you use the next editor line for a new posting you can use ctrl-p for nick
 completion if you wrote the nick in the past.
 Thanks to Matthias Kopfermann for this hint.
+
 You can find an example of how this nested environment could look like on:
 http://nion.modprobe.de/blog/archives/440-Using-the-ii-irc-client.html
 
@@ -46,7 +48,7 @@ No configuration is needed.
 Changelog
 ---------
 Since I missed the chance to add a proper changelog right from the beginning,
-please have a look at the commit messages on http://www.suckless.org/hg.rc/ii
+please have a look at the commit messages on http://code.suckless.org/hg/ii/
 they are fairly descriptive on releases prior to 1.2.
 
 Contact
