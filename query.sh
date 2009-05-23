@@ -20,7 +20,7 @@ do
         # strip server, nickserv and channel out files
         echo $i | egrep -v -i "nickserv|#|$IRCPATH/(irc\.freenode\.net|irc\.oftc\.net)/out" > /dev/null 2>&1
         if [ $? -ne 1 ]; then
-            echo -e "new data in: $i\n========================================================"
+            echo "new data in: $i\n========================================================"
             tail -5 $i
         fi
     fi
