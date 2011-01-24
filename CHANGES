@@ -3,6 +3,8 @@
       to prevent leaking file descriptors in the long run => Thanks samurai!
     - only handle commands ii explicitely understands and treat the rest
       as raw irc (only worked for raw commands in capital lettersin the past) => Thanks samurai!
+    - create in FIFO on receiving a privmsg directly instead of requiring a new
+      /j command first => Thanks Evan Gates
     - minor changes
 
 1.4 (2008-08-09):
