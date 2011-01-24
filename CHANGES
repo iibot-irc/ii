@@ -1,3 +1,10 @@
+1.5 (2011-01-24):
+    - fix channel name comparison in add_channel(), compare lowercase
+      to prevent leaking file descriptors in the long run => Thanks samurai!
+    - only handle commands ii explicitely understands and treat the rest
+      as raw irc (only worked for raw commands in capital lettersin the past) => Thanks samurai!
+    - minor changes
+
 1.4 (2008-08-09):
     - fix directory traversal on servers that support SAJOIN
       NOTE: not marking as security relevant as it is only possible to
