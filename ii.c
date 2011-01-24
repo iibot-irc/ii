@@ -226,7 +226,7 @@ static void proc_channels_privmsg(char *channel, char *buf) {
 }
 
 static void proc_channels_input(Channel *c, char *buf) {
-	static char infile[256];
+	/* static char infile[256]; */
 	char *p = NULL;
 
 	if(buf[0] != '/' && buf[0] != 0) {
@@ -280,8 +280,8 @@ static void proc_channels_input(Channel *c, char *buf) {
 						"PART %s :ii - 500 SLOC are too much\r\n", c->name);
 			write(irc, message, strlen(message));
 			close(c->fd);
-			create_filepath(infile, sizeof(infile), c->name, "in");
-			unlink(infile);
+			/*create_filepath(infile, sizeof(infile), c->name, "in");
+			unlink(infile); */
 			rm_channel(c);
 			return;
 			break;

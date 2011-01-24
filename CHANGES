@@ -5,6 +5,8 @@
       as raw irc (only worked for raw commands in capital lettersin the past) => Thanks samurai!
     - create in FIFO on receiving a privmsg directly instead of requiring a new
       /j command first => Thanks Evan Gates
+      this also implies that in FIFOs aren't deleted on channel leaves any longer because
+      this itself creates a channel event again which in turn would recreate the file
     - minor changes
 
 1.4 (2008-08-09):
