@@ -211,6 +211,7 @@ static void print_out(char *channel, char *buf) {
 	if(strstr(buf, server)) channel="";
 	create_filepath(outfile, sizeof(outfile), channel, "out");
 	if(!(out = fopen(outfile, "a"))) return;
+	if(channel && channel[0]) add_channel(channel);
 
 	strftime(buft, sizeof(buft), "%F %R", localtime(&t));
 	fprintf(out, "%s %s\n", buft, buf);
