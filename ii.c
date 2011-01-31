@@ -1,7 +1,6 @@
 /* (C)opyright MMV-MMVI Anselm R. Garbe <garbeam at gmail dot com>
  * (C)opyright MMV-MMXI Nico Golde <nico at ngolde dot de>
  * See LICENSE file for license details. */
-
 #include <errno.h>
 #include <netdb.h>
 #include <sys/types.h>
@@ -22,7 +21,8 @@
 #ifndef PIPE_BUF /* FreeBSD don't know PIPE_BUF */
 #define PIPE_BUF 4096
 #endif
-
+#define PING_TIMEOUT 300
+#define SERVER_PORT 6667
 enum { TOK_NICKSRV = 0, TOK_USER, TOK_CMD, TOK_CHAN, TOK_ARG, TOK_TEXT, TOK_LAST };
 
 typedef struct Channel Channel;
@@ -32,8 +32,6 @@ struct Channel {
 	Channel *next;
 };
 
-#define PING_TIMEOUT 300
-#define SERVER_PORT 6667
 static int irc;
 static time_t last_response;
 static Channel *channels = NULL;
@@ -51,6 +49,7 @@ static void usage() {
 			"          [-n <nick>] [-k <password>] [-f <fullname>]\n");
 	exit(EXIT_SUCCESS);
 }
+
 static char *striplower(char *s) {
 	char *p = NULL;
 	for(p = s; p && *p; p++) {
@@ -65,7 +64,6 @@ static void create_dirtree(const char *dir) {
 	char tmp[256];
 	char *p = NULL;
 	size_t len;
-
 	snprintf(tmp, sizeof(tmp),"%s",dir);
 	len = strlen(tmp);
 	if(tmp[len - 1] == '/')
@@ -150,7 +148,6 @@ static void login(char *key, char *fullname) {
 				nick, nick, host, fullname ? fullname : nick);
 	else snprintf(message, PIPE_BUF, "NICK %s\r\nUSER %s localhost %s :%s\r\n",
 				nick, nick, host, fullname ? fullname : nick);
-
 	write(irc, message, strlen(message));	/* login */
 }
 
@@ -288,7 +285,10 @@ static void proc_channels_input(Channel *c, char *buf) {
 		default:
 			snprintf(message, PIPE_BUF, "%s\r\n", &buf[1]);
 			break;
-	}
+		}
+	else
+		snprintf(message, PIPE_BUF, "%s\r\n", &buf[1]);
+
 	if (message[0] != '\0')
 		write(irc, message, strlen(message));
 }
