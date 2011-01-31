@@ -1,3 +1,6 @@
+1.6 (2011-01-31):
+    - fix regression introduced for handling unknown commands
+
 1.5 (2011-01-24):
     - fix channel name comparison in add_channel(), compare lowercase
       to prevent leaking file descriptors in the long run => Thanks samurai!
