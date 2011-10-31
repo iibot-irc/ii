@@ -41,13 +41,12 @@ static char path[_POSIX_PATH_MAX];
 static char message[PIPE_BUF]; /* message buf used for communication */
 
 static void usage() {
-	fprintf(stderr, "%s",
-			"ii - irc it - " VERSION "\n"
-			"(C)opyright MMV-MMVI Anselm R. Garbe\n"
-			"(C)opyright MMV-MMXI Nico Golde\n"
-			"usage: ii [-i <irc dir>] [-s <host>] [-p <port>]\n"
-			"          [-n <nick>] [-k <password>] [-f <fullname>]\n");
-	exit(EXIT_SUCCESS);
+	fputs("ii - irc it - " VERSION "\n"
+	      "(C)opyright MMV-MMVI Anselm R. Garbe\n"
+	      "(C)opyright MMV-MMXI Nico Golde\n"
+	      "usage: ii [-i <irc dir>] [-s <host>] [-p <port>]\n"
+	      "          [-n <nick>] [-k <password>] [-f <fullname>]\n", stderr);
+	exit(EXIT_FAILURE);
 }
 
 static char *striplower(char *s) {
@@ -89,7 +88,7 @@ static int get_filepath(char *filepath, size_t len, char *channel, char *file) {
 
 static void create_filepath(char *filepath, size_t len, char *channel, char *suffix) {
 	if(!get_filepath(filepath, len, striplower(channel), suffix)) {
-		fprintf(stderr, "%s", "ii: path to irc directory too long\n");
+		fputs("ii: path to irc directory too long\n", stderr);
 		exit(EXIT_FAILURE);
 	}
 }
@@ -240,12 +239,10 @@ static void proc_channels_input(Channel *c, char *buf) {
 				else snprintf(message, PIPE_BUF, "JOIN %s\r\n", &buf[3]);
 				add_channel(&buf[3]);
 			}
-			else {
-				if(p){
-					add_channel(&buf[3]);
-					proc_channels_privmsg(&buf[3], p + 1);
-					return;
-				}
+			else if(p){
+				add_channel(&buf[3]);
+				proc_channels_privmsg(&buf[3], p + 1);
+				return;
 			}
 			break;
 		case 't':
@@ -467,7 +464,7 @@ int main(int argc, char *argv[]) {
 	char prefix[_POSIX_PATH_MAX];
 
 	if(!spw) {
-		fprintf(stderr,"ii: getpwuid() failed\n");
+		fputs("ii: getpwuid() failed\n", stderr);
 		exit(EXIT_FAILURE);
 	}
 	snprintf(nick, sizeof(nick), "%s", spw->pw_name);
@@ -487,7 +484,7 @@ int main(int argc, char *argv[]) {
 	}
 	irc = tcpopen(port);
 	if(!snprintf(path, sizeof(path), "%s/%s", prefix, host)) {
-		fprintf(stderr, "%s", "ii: path to irc directory too long\n");
+		fputs("ii: path to irc directory too long\n", stderr);
 		exit(EXIT_FAILURE);
 	}
 	create_dirtree(path);
@@ -496,5 +493,5 @@ int main(int argc, char *argv[]) {
 	login(key, fullname);
 	run();
 
-	return 0;
+	return EXIT_SUCCESS;
 }
