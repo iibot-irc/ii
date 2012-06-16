@@ -1,3 +1,8 @@
+1.7 (20XX-XX-XX)
+    - -k now specifies an environment variable that contains the
+      server key. This behaviour has been changed in order to not
+      expose the password in the process list.
+
 1.6 (2011-01-31):
     - fix regression introduced for handling unknown commands
 

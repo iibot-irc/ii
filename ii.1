@@ -26,7 +26,7 @@ and ii creates a new channel directory with in and out file.
 .RB [ \-p
 .IR port ]
 .RB [ \-k
-.IR password ]
+.IR environment variable ]
 .RB [ \-i
 .IR prefix ]
 .RB [ \-n
@@ -42,10 +42,9 @@ lets you override the default servername (irc.freenode.net)
 .BI \-p " port"
 lets you override the default port (6667)
 .TP
-.BI \-k " password"
-lets you use a password to authenticate your nick on the server
-(be aware of the problem that this is visible in the process list, if you
-don't want this use a query to submit your password)
+.BI \-k " environment variable"
+lets you specify an environment variable that contains your IRC password, e.g. IIPASS="foobar" ii -k FOOBAR.
+This is done in order to prevent other users from eavesdropping the server password via the process list.
 .TP
 .BI \-i " prefix"
 lets you override the default irc path (~/irc)

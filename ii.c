@@ -477,7 +477,7 @@ int main(int argc, char *argv[]) {
 			case 's': host = argv[++i]; break;
 			case 'p': port = strtol(argv[++i], NULL, 10); break;
 			case 'n': snprintf(nick,sizeof(nick),"%s", argv[++i]); break;
-			case 'k': key = argv[++i]; break;
+			case 'k': key = getenv(argv[++i]); break;
 			case 'f': fullname = argv[++i]; break;
 			default: usage(); break;
 		}
