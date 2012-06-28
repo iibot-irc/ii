@@ -347,13 +347,9 @@ static void proc_server_cmd(char *buf) {
 	} else if(!strncmp("ERROR", argv[TOK_CMD], 6))
 		snprintf(message, PIPE_BUF, "-!- error %s", argv[TOK_TEXT] ? argv[TOK_TEXT] : "unknown");
 	else if(!strncmp("JOIN", argv[TOK_CMD], 5)) {
-		if(argv[TOK_TEXT] != NULL){
-			p = strchr(argv[TOK_TEXT], ' ');
-			if(p)
-				*p = 0;
-		}
-		argv[TOK_CHAN] = argv[TOK_TEXT];
-		snprintf(message, PIPE_BUF, "-!- %s(%s) has joined %s", argv[TOK_NICKSRV], argv[TOK_USER], argv[TOK_TEXT]);
+		if (argv[TOK_TEXT] != NULL)
+			argv[TOK_CHAN] = argv[TOK_TEXT];
+		snprintf(message, PIPE_BUF, "-!- %s(%s) has joined %s", argv[TOK_NICKSRV], argv[TOK_USER], argv[TOK_CHAN]);
 	} else if(!strncmp("PART", argv[TOK_CMD], 5)) {
 		snprintf(message, PIPE_BUF, "-!- %s(%s) has left %s", argv[TOK_NICKSRV], argv[TOK_USER], argv[TOK_CHAN]);
 	} else if(!strncmp("MODE", argv[TOK_CMD], 5))
