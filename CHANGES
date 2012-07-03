@@ -4,6 +4,9 @@
       expose the password in the process list.
     - Fix parsing of JOIN messages for certain servers.
       Thanks Ivan Kanakarakis!
+    - Use , rather than _ for slash characters in channel names.
+      As per RFC , is not allowed in a channel name, while _ is.
+      Thanks plomplomplom and Nils Dagsson Moskopp!
 
 1.6 (2011-01-31):
     - fix regression introduced for handling unknown commands

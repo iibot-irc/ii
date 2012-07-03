@@ -52,7 +52,7 @@ static void usage() {
 static char *striplower(char *s) {
 	char *p = NULL;
 	for(p = s; p && *p; p++) {
-		if(*p == '/') *p = '_';
+		if(*p == '/') *p = ',';
 		*p = tolower(*p);
 	}
 	return s;
