@@ -1,4 +1,4 @@
-1.7 (20XX-XX-XX)
+1.7 (2013-01-05)
     - -k now specifies an environment variable that contains the
       server key. This behaviour has been changed in order to not
       expose the password in the process list.
