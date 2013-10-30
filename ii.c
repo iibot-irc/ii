@@ -26,10 +26,18 @@
 #define SERVER_PORT 6667
 enum { TOK_NICKSRV = 0, TOK_USER, TOK_CMD, TOK_CHAN, TOK_ARG, TOK_TEXT, TOK_LAST };
 
+#define LINEBUF_LEN PIPE_BUF
+typedef struct Linebuf Linebuf;
+struct Linebuf {
+	size_t fill;
+	char buf[LINEBUF_LEN];
+};
+
 typedef struct Channel Channel;
 struct Channel {
 	int fd;
 	char *name;
+	Linebuf in_buf;
 	Channel *next;
 };
 
@@ -128,6 +136,7 @@ static void add_channel(char *cname) {
 	}
 	c->fd = fd;
 	c->name = strdup(name);
+	c->in_buf.fill = 0;
 }
 
 static void rm_channel(Channel *c) {
@@ -373,22 +382,26 @@ static void proc_server_cmd(char *buf) {
 		print_out(argv[TOK_CHAN], message);
 }
 
-static int read_line(int fd, size_t res_len, char *buf) {
-	size_t i = 0;
+static int read_line(int fd, Linebuf *buf) {
 	char c = 0;
+        int res = 0;
 	do {
-		if(read(fd, &c, sizeof(char)) != sizeof(char))
-			return -1;
-		buf[i++] = c;
+		if((res = read(fd, &c, sizeof(char))) != sizeof(char)) {
+			if(res != EAGAIN) {
+				return -1;
+			}
+			return 1;
+		}
+		buf->buf[buf->fill++] = c;
 	}
-	while(c != '\n' && i < res_len);
-	buf[i - 1] = 0;			/* eliminates '\n' */
+	while(c != '\n' && buf->fill < LINEBUF_LEN);
+	buf->buf[buf->fill - 1] = 0;		/* eliminates '\n' */
 	return 0;
 }
 
 static void handle_channels_input(Channel *c) {
-	static char buf[PIPE_BUF];
-	if(read_line(c->fd, PIPE_BUF, buf) == -1) {
+	int res = read_line(c->fd, &(c->in_buf));
+	if(res == -1) {
 		close(c->fd);
 		int fd = open_channel(c->name);
 		if(fd != -1)
@@ -396,17 +409,24 @@ static void handle_channels_input(Channel *c) {
 		else
 			rm_channel(c);
 		return;
+	} else if(res == 1) {
+		return;
 	}
-	proc_channels_input(c, buf);
+	proc_channels_input(c, c->in_buf.buf);
+	c->in_buf.fill = 0;
 }
 
 static void handle_server_output() {
-	static char buf[PIPE_BUF];
-	if(read_line(irc, PIPE_BUF, buf) == -1) {
+	static Linebuf buf;	/* initialized to zero by loader */
+	int res = read_line(irc, &buf);
+	if(res == -1) {
 		perror("ii: remote host closed connection");
 		exit(EXIT_FAILURE);
+	} else if(res == 1) {
+		return;
 	}
-	proc_server_cmd(buf);
+	proc_server_cmd(buf.buf);
+	buf.fill = 0;
 }
 
 static void run() {
