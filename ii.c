@@ -24,9 +24,12 @@
 #endif
 #define PING_TIMEOUT 300
 #define SERVER_PORT 6667
+#define LINEBUF_LEN PIPE_BUF
+#define MSGBUF_LEN 4096
+#define MSGBUF_MSG_LEN (LINEBUF_LEN + 64)
+
 enum { TOK_NICKSRV = 0, TOK_USER, TOK_CMD, TOK_CHAN, TOK_ARG, TOK_TEXT, TOK_LAST };
 
-#define LINEBUF_LEN PIPE_BUF
 typedef struct Linebuf Linebuf;
 struct Linebuf {
 	size_t fill;
@@ -48,13 +51,16 @@ static char *host = "irc.freenode.net";
 static char nick[32];			/* might change while running */
 static char path[_POSIX_PATH_MAX];
 static char message[PIPE_BUF]; /* message buf used for communication */
+static int heat, flood_recalc_ival, allow_read, mb_base, mb_fill;
+static char msgbuf[MSGBUF_LEN][MSGBUF_MSG_LEN];
 
 static void usage() {
 	fputs("ii - irc it - " VERSION "\n"
 	      "(C)opyright MMV-MMVI Anselm R. Garbe\n"
 	      "(C)opyright MMV-MMXI Nico Golde\n"
 	      "usage: ii [-i <irc dir>] [-s <host>] [-p <port>]\n"
-	      "          [-n <nick>] [-k <password>] [-f <fullname>]\n", stderr);
+	      "          [-n <nick>] [-k <password>] [-f <fullname>]\n"
+	      "          [-b <flood burst count>] [-c <flood_recalc interval>]\n", stderr);
 	exit(EXIT_FAILURE);
 }
 
@@ -151,13 +157,31 @@ static void rm_channel(Channel *c) {
 	free(c);
 }
 
+static void pushmsg(char *msg, size_t sz) {
+	if(sz >= MSGBUF_MSG_LEN) { /* too big */
+		return;
+	}
+	if(mb_fill == MSGBUF_LEN) { /* full */
+		return;
+	}
+
+	int i = (mb_base + mb_fill++) % MSGBUF_LEN;
+	memcpy(msgbuf[i], msg, sz);
+	msgbuf[i][sz] = '\0';
+}
+
+static void popmsg() {
+	int i = (--mb_fill, mb_base++) % MSGBUF_LEN;
+	write(irc, msgbuf[i], strlen(msgbuf[i]));
+}
+
 static void login(char *key, char *fullname) {
 	if(key) snprintf(message, PIPE_BUF,
 				"PASS %s\r\nNICK %s\r\nUSER %s localhost %s :%s\r\n", key,
 				nick, nick, host, fullname ? fullname : nick);
 	else snprintf(message, PIPE_BUF, "NICK %s\r\nUSER %s localhost %s :%s\r\n",
 				nick, nick, host, fullname ? fullname : nick);
-	write(irc, message, strlen(message));	/* login */
+	pushmsg(message, strlen(message));	/* login */
 }
 
 static int tcpopen(unsigned short port) {
@@ -228,7 +252,7 @@ static void proc_channels_privmsg(char *channel, char *buf) {
 	snprintf(message, PIPE_BUF, "<%s> %s", nick, buf);
 	print_out(channel, message);
 	snprintf(message, PIPE_BUF, "PRIVMSG %s :%s\r\n", channel, buf);
-	write(irc, message, strlen(message));
+	pushmsg(message, strlen(message));
 }
 
 static void proc_channels_input(Channel *c, char *buf) {
@@ -282,7 +306,7 @@ static void proc_channels_input(Channel *c, char *buf) {
 			else
 				snprintf(message, PIPE_BUF,
 						"PART %s :ii - 500 SLOC are too much\r\n", c->name);
-			write(irc, message, strlen(message));
+			pushmsg(message, strlen(message));
 			close(c->fd);
 			/*create_filepath(infile, sizeof(infile), c->name, "in");
 			unlink(infile); */
@@ -297,7 +321,7 @@ static void proc_channels_input(Channel *c, char *buf) {
 		snprintf(message, PIPE_BUF, "%s\r\n", &buf[1]);
 
 	if (message[0] != '\0')
-		write(irc, message, strlen(message));
+		pushmsg(message, strlen(message));
 }
 
 static void proc_server_cmd(char *buf) {
@@ -348,7 +372,7 @@ static void proc_server_cmd(char *buf) {
 		return;
 	} else if(!strncmp("PING", argv[TOK_CMD], 5)) {
 		snprintf(message, PIPE_BUF, "PONG %s\r\n", argv[TOK_TEXT]);
-		write(irc, message, strlen(message));
+		pushmsg(message, strlen(message));
 		return;
 	} else if(!argv[TOK_NICKSRV] || !argv[TOK_USER]) {	/* server command */
 		snprintf(message, PIPE_BUF, "%s%s", argv[TOK_ARG] ? argv[TOK_ARG] : "", argv[TOK_TEXT] ? argv[TOK_TEXT] : "");
@@ -384,10 +408,9 @@ static void proc_server_cmd(char *buf) {
 
 static int read_line(int fd, Linebuf *buf) {
 	char c = 0;
-        int res = 0;
 	do {
-		if((res = read(fd, &c, sizeof(char))) != sizeof(char)) {
-			if(res != EAGAIN) {
+		if(read(fd, &c, sizeof(char)) != sizeof(char)) {
+			if(errno != EAGAIN) {
 				return -1;
 			}
 			return 1;
@@ -431,13 +454,26 @@ static void handle_server_output() {
 
 static void run() {
 	Channel *c;
-	int r, maxfd;
+	int r, maxfd, ping_accum = 0,
+		timeout_sec = (120 > flood_recalc_ival) ? flood_recalc_ival : 120;
+	double recalc_accum = 0.0;
 	fd_set rd;
 	struct timeval tv;
 	char ping_msg[512];
 
 	snprintf(ping_msg, sizeof(ping_msg), "PING %s\r\n", host);
 	for(;;) {
+		if(recalc_accum >= (double)flood_recalc_ival) {
+			if(heat > 0) {
+				--heat;
+			}
+			recalc_accum = 0.0;
+		}
+
+		while(mb_fill > 0 && heat < allow_read) {
+			popmsg(); ++heat;
+		}
+
 		FD_ZERO(&rd);
 		maxfd = irc;
 		FD_SET(irc, &rd);
@@ -447,7 +483,7 @@ static void run() {
 			FD_SET(c->fd, &rd);
 		}
 
-		tv.tv_sec = 120;
+		tv.tv_sec = timeout_sec;
 		tv.tv_usec = 0;
 		r = select(maxfd + 1, &rd, 0, 0, &tv);
 		if(r < 0) {
@@ -456,16 +492,25 @@ static void run() {
 			perror("ii: error on select()");
 			exit(EXIT_FAILURE);
 		} else if(r == 0) {
-			if(time(NULL) - last_response >= PING_TIMEOUT) {
-				print_out(NULL, "-!- ii shutting down: ping timeout");
-				exit(EXIT_FAILURE);
+			ping_accum += timeout_sec;
+			recalc_accum += (double)timeout_sec;
+			if(ping_accum >= 120) {
+				if(time(NULL) - last_response >= PING_TIMEOUT) {
+					print_out(NULL, "-!- ii shutting down: ping timeout");
+					exit(EXIT_FAILURE);
+				}
+				pushmsg(ping_msg, strlen(ping_msg));
+				ping_accum = 0;
 			}
-			write(irc, ping_msg, strlen(ping_msg));
 			continue;
 		}
+
+		recalc_accum += (double)(timeout_sec - tv.tv_sec) - (double)tv.tv_usec / 1000000.0;
+
 		if(FD_ISSET(irc, &rd)) {
 			handle_server_output();
 			last_response = time(NULL);
+			ping_accum = 0;
 		}
 		for(c = channels; c; c = c->next)
 			if(FD_ISSET(c->fd, &rd))
@@ -488,6 +533,9 @@ int main(int argc, char *argv[]) {
 	snprintf(prefix, sizeof(prefix),"%s/irc", spw->pw_dir);
 	if (argc <= 1 || (argc == 2 && argv[1][0] == '-' && argv[1][1] == 'h')) usage();
 
+	allow_read = 3;
+	flood_recalc_ival = 1;
+
 	for(i = 1; (i + 1 < argc) && (argv[i][0] == '-'); i++) {
 		switch (argv[i][1]) {
 			case 'i': snprintf(prefix,sizeof(prefix),"%s", argv[++i]); break;
@@ -496,6 +544,8 @@ int main(int argc, char *argv[]) {
 			case 'n': snprintf(nick,sizeof(nick),"%s", argv[++i]); break;
 			case 'k': key = getenv(argv[++i]); break;
 			case 'f': fullname = argv[++i]; break;
+			case 'b': allow_read = strtol(argv[++i], NULL, 10); break;
+			case 'c': flood_recalc_ival = strtol(argv[++i], NULL, 10); break;
 			default: usage(); break;
 		}
 	}
